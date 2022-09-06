@@ -46,13 +46,31 @@ pub fn parse_url(url: &str) -> UrlComponents {
 }
 
 pub(crate) fn extract_scheme(url: &str) -> Result<(String, String), String> {
-    let boxed_scheme_and_remaining_url = url.split_once("://");
-    if boxed_scheme_and_remaining_url.is_some() {
-        let (scheme, remaining_url) = boxed_scheme_and_remaining_url.unwrap();
-        return Ok((scheme.to_string(), remaining_url.to_string()))
+    let boxed_split_at_path = url.split_once("://");
+    if boxed_split_at_path.is_some() {
+        let (scheme, remaining_url) = boxed_split_at_path.unwrap();
+        Ok((scheme.to_string(), remaining_url.to_string()))
     } else {
-        return Err("unable to identify scheme".to_string());
+        Err("unable to identify scheme".to_string())
     }
+}
+
+pub(crate) fn extract_authority(url: &str) -> Result<(String, Option<String>), String> {
+    if url.chars().count() == 0 {
+        return Err("unable to identify authority".to_string())
+    }
+
+    let mut is_there_a_slash = url.contains("/");
+    let mut is_there_a_question_mark = url.contains("?");
+    let mut is_there_a_hash = url.contains("#");
+
+    if !is_there_a_slash && !is_there_a_question_mark && !is_there_a_hash {
+        return Ok((url.to_string(), None))
+    }
+
+
+    Err("not implemented yet".to_string())
+
 }
 
 
@@ -60,7 +78,7 @@ pub(crate) fn extract_scheme(url: &str) -> Result<(String, String), String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{extract_scheme, parse_url};
+    use crate::{extract_authority, extract_scheme, parse_url};
 
     #[test]
     fn extract_scheme_test() {
@@ -70,6 +88,16 @@ mod tests {
 
         assert_eq!("https", scheme);
         assert_eq!("example.com", remaining_url);
+    }
+
+    #[test]
+    fn extract_authority_test() {
+        let remaining_url = "example.com";
+        let boxed_result = extract_authority(remaining_url);
+        let (authority, remaining_url) = boxed_result.unwrap();
+
+        assert_eq!("example.com", authority);
+        assert_eq!(None, remaining_url);
     }
 
     #[test]
