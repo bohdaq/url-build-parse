@@ -139,31 +139,31 @@ mod tests {
 
     #[test]
     fn extract_authority_path_defined_as_slash_query_defined_fragment_defined() {
-        let remaining_url = "example.com/?q=test#123";
+        let remaining_url = "user:passwd@example.com:443/?q=test#123";
         let boxed_result = extract_authority(remaining_url);
         let (authority, remaining_url) = boxed_result.unwrap();
 
-        assert_eq!("example.com", authority);
+        assert_eq!("user:passwd@example.com:443", authority);
         assert_eq!("/?q=test#123", remaining_url.unwrap());
     }
 
     #[test]
     fn extract_authority_path_undefined_query_defined_fragment_defined() {
-        let remaining_url = "example.com?q=test#123";
+        let remaining_url = "user:passwd@example.com?q=test#123";
         let boxed_result = extract_authority(remaining_url);
         let (authority, remaining_url) = boxed_result.unwrap();
 
-        assert_eq!("example.com", authority);
+        assert_eq!("user:passwd@example.com", authority);
         assert_eq!("?q=test#123", remaining_url.unwrap());
     }
 
     #[test]
     fn extract_authority_path_undefined_query_undefined_fragment_defined() {
-        let remaining_url = "example.com#123";
+        let remaining_url = "example.com:80#123";
         let boxed_result = extract_authority(remaining_url);
         let (authority, remaining_url) = boxed_result.unwrap();
 
-        assert_eq!("example.com", authority);
+        assert_eq!("example.com:80", authority);
         assert_eq!("#123", remaining_url.unwrap());
     }
 
