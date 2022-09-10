@@ -178,12 +178,32 @@ pub(crate) fn extract_query(url: &str) -> Result<(String, Option<String>), Strin
 
 }
 
+pub(crate) fn extract_fragment(url: &str) -> Result<String, String> {
+    if url.chars().count() == 0 {
+        let error_message = "error: remaining url is empty";
+        return Err(error_message.to_string())
+    }
+
+    let is_there_a_hash = url.contains("#");
+
+    if !is_there_a_hash {
+        let error_message = ["error: fragment is not defined url: ", url].join("");
+        return Err(error_message.to_string())
+    }
+
+    let (_, fragment) = url.split_once("#").unwrap();
+
+    let fragment = ["#".to_string(), fragment.to_string()].join("");
+    Ok(fragment.to_string())
+
+}
+
 
 
 
 #[cfg(test)]
 mod tests {
-    use crate::{extract_authority, extract_path, extract_query, extract_scheme, parse_url};
+    use crate::{extract_authority, extract_fragment, extract_path, extract_query, extract_scheme, parse_url};
 
     #[test]
     fn extract_scheme_test() {
@@ -386,6 +406,14 @@ mod tests {
 
         assert_eq!("q=query", query);
         assert_eq!("#fragment1", remaining_url.unwrap());
+    }
+
+    #[test]
+    fn extract_fragment_defined() {
+        let remaining_url = "#fragment1";
+        let boxed_result = extract_fragment(remaining_url);
+        let fragment = boxed_result.unwrap();
+        assert_eq!("#fragment1", fragment);
     }
 
     #[test]
