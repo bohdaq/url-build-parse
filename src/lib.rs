@@ -409,11 +409,19 @@ mod tests {
     }
 
     #[test]
-    fn extract_fragment_defined() {
-        let remaining_url = "#fragment1";
+    fn extract_fragment_undefined() {
+        let remaining_url = "gment1";
         let boxed_result = extract_fragment(remaining_url);
-        let fragment = boxed_result.unwrap();
-        assert_eq!("#fragment1", fragment);
+        assert!(boxed_result.is_err());
+        assert_eq!("error: fragment is not defined url: gment1", boxed_result.err().unwrap());
+    }
+
+    #[test]
+    fn extract_fragment_undefined_empty() {
+        let remaining_url = "";
+        let boxed_result = extract_fragment(remaining_url);
+        assert!(boxed_result.is_err());
+        assert_eq!("error: remaining url is empty", boxed_result.err().unwrap());
     }
 
     #[test]
