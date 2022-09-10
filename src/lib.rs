@@ -102,7 +102,7 @@ pub(crate) fn extract_authority(url: &str) -> Result<(String, Option<String>), S
 
 pub(crate) fn extract_path(url: &str) -> Result<(String, Option<String>), String> {
     if url.chars().count() == 0 {
-        let error_message = ["error: remaining url is empty ", url].join("");
+        let error_message = "error: remaining url is empty";
         return Err(error_message.to_string())
     }
 
@@ -299,6 +299,13 @@ mod tests {
         assert_eq!("?q=query", remaining_url.unwrap());
     }
 
+    #[test]
+    fn extract_path_path_zero_length_query_undefined_fragment_undefined() {
+        let remaining_url = "";
+        let boxed_result = extract_path(remaining_url);
+        assert!(boxed_result.is_err());
+        assert_eq!("error: remaining url is empty", boxed_result.err().unwrap());
+    }
 
     #[test]
     fn parse_simple_url() {
