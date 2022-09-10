@@ -234,6 +234,36 @@ mod tests {
         assert_eq!("#123", remaining_url.unwrap());
     }
 
+    #[test]
+    fn extract_path_path_defined_query_defined_fragment_defined() {
+        let remaining_url = "/some-path?q=query#123";
+        let boxed_result = extract_path(remaining_url);
+        let (path, remaining_url) = boxed_result.unwrap();
+
+        assert_eq!("some-path", path);
+        assert_eq!("?q=query#123", remaining_url.unwrap());
+    }
+
+    #[test]
+    fn extract_path_path_defined_query_defined_fragment_undefined() {
+        let remaining_url = "/some-path?q=query";
+        let boxed_result = extract_path(remaining_url);
+        let (path, remaining_url) = boxed_result.unwrap();
+
+        assert_eq!("some-path", path);
+        assert_eq!("?q=query", remaining_url.unwrap());
+    }
+
+    #[test]
+    fn extract_path_path_defined_as_slash_query_defined_fragment_undefined() {
+        let remaining_url = "/?q=query";
+        let boxed_result = extract_path(remaining_url);
+        let (path, remaining_url) = boxed_result.unwrap();
+
+        assert_eq!("", path);
+        assert_eq!("?q=query", remaining_url.unwrap());
+    }
+
 
     #[test]
     fn parse_simple_url() {
