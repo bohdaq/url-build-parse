@@ -119,7 +119,7 @@ mod tests {
     }
 
     #[test]
-    fn extract_authority_path_defined() {
+    fn extract_authority_path_defined_query_defined_fragment_defined() {
         let remaining_url = "example.com/some-path?q=test#123";
         let boxed_result = extract_authority(remaining_url);
         let (authority, remaining_url) = boxed_result.unwrap();
@@ -129,7 +129,7 @@ mod tests {
     }
 
     #[test]
-    fn extract_authority_path_undefined() {
+    fn extract_authority_path_undefined_query_defined_fragment_defined() {
         let remaining_url = "example.com?q=test#123";
         let boxed_result = extract_authority(remaining_url);
         let (authority, remaining_url) = boxed_result.unwrap();
