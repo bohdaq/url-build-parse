@@ -68,6 +68,24 @@ pub(crate) fn extract_authority(url: &str) -> Result<(String, Option<String>), S
         return Ok((url.to_string(), None))
     }
 
+    if is_there_a_slash {
+        let boxed_split = url.split_once("/");
+        if boxed_split.is_some() {
+            let (authority, remaining_url) = boxed_split.unwrap();
+            let remaining_url = ["/", remaining_url].join("");
+            return Ok((authority.to_string(), Option::from(remaining_url.to_string())))
+        }
+    }
+
+    if !is_there_a_slash && is_there_a_question_mark {
+        let boxed_split = url.split_once("?");
+        if boxed_split.is_some() {
+            let (authority, remaining_url) = boxed_split.unwrap();
+            let remaining_url = ["?", remaining_url].join("");
+            return Ok((authority.to_string(), Option::from(remaining_url.to_string())))
+        }
+    }
+
 
     Err("not implemented yet".to_string())
 
@@ -98,6 +116,26 @@ mod tests {
 
         assert_eq!("example.com", authority);
         assert_eq!(None, remaining_url);
+    }
+
+    #[test]
+    fn extract_authority_path_defined() {
+        let remaining_url = "example.com/some-path?q=test#123";
+        let boxed_result = extract_authority(remaining_url);
+        let (authority, remaining_url) = boxed_result.unwrap();
+
+        assert_eq!("example.com", authority);
+        assert_eq!("/some-path?q=test#123", remaining_url.unwrap());
+    }
+
+    #[test]
+    fn extract_authority_path_undefined() {
+        let remaining_url = "example.com?q=test#123";
+        let boxed_result = extract_authority(remaining_url);
+        let (authority, remaining_url) = boxed_result.unwrap();
+
+        assert_eq!("example.com", authority);
+        assert_eq!("?q=test#123", remaining_url.unwrap());
     }
 
     #[test]
