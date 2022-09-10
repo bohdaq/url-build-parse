@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::fmt::Error;
 
 pub struct UrlComponents {
     pub scheme: String,
@@ -61,9 +60,9 @@ pub(crate) fn extract_authority(url: &str) -> Result<(String, Option<String>), S
         return Err(error_message.to_string())
     }
 
-    let mut is_there_a_slash = url.contains("/");
-    let mut is_there_a_question_mark = url.contains("?");
-    let mut is_there_a_hash = url.contains("#");
+    let  is_there_a_slash = url.contains("/");
+    let  is_there_a_question_mark = url.contains("?");
+    let  is_there_a_hash = url.contains("#");
 
     if !is_there_a_slash && !is_there_a_question_mark && !is_there_a_hash {
         return Ok((url.to_string(), None))
@@ -107,13 +106,13 @@ pub(crate) fn extract_path(url: &str) -> Result<(String, Option<String>), String
         return Err(error_message.to_string())
     }
 
-    let mut is_there_a_slash = url.contains("/");
-    let mut is_there_a_question_mark = url.contains("?");
-    let mut is_there_a_hash = url.contains("#");
+    let is_there_a_slash = url.contains("/");
+    let is_there_a_question_mark = url.contains("?");
+    let is_there_a_hash = url.contains("#");
 
     if !is_there_a_slash && !is_there_a_question_mark && !is_there_a_hash {
         let error_message = ["error: not valid remaining url ", url].join("");
-        return Err((error_message.to_string()))
+        return Err(error_message.to_string())
     }
 
     if is_there_a_slash {
@@ -159,12 +158,12 @@ pub(crate) fn extract_query(url: &str) -> Result<(String, Option<String>), Strin
         return Err(error_message.to_string())
     }
 
-    let mut is_there_a_question_mark = url.contains("?");
-    let mut is_there_a_hash = url.contains("#");
+    let is_there_a_question_mark = url.contains("?");
+    let is_there_a_hash = url.contains("#");
 
     if !is_there_a_question_mark {
         let error_message = ["error: query is not defined url: ", url].join("");
-        return Err((error_message.to_string()))
+        return Err(error_message.to_string())
     }
 
     let (_, url) = url.split_once("?").unwrap();
@@ -172,9 +171,9 @@ pub(crate) fn extract_query(url: &str) -> Result<(String, Option<String>), Strin
     if is_there_a_hash {
         let (query, rest) = url.split_once("#").unwrap();
         let rest = ["#".to_string(), rest.to_string()].join("");
-        return Ok((query.to_string(), Option::from(rest.to_string())))
+        Ok((query.to_string(), Option::from(rest.to_string())))
     } else {
-        return Ok((url.to_string(), None))
+        Ok((url.to_string(), None))
     }
 
 }
