@@ -153,12 +153,38 @@ pub(crate) fn extract_path(url: &str) -> Result<(String, Option<String>), String
 
 }
 
+pub(crate) fn extract_query(url: &str) -> Result<(String, Option<String>), String> {
+    if url.chars().count() == 0 {
+        let error_message = "error: remaining url is empty";
+        return Err(error_message.to_string())
+    }
+
+    let mut is_there_a_question_mark = url.contains("?");
+    let mut is_there_a_hash = url.contains("#");
+
+    if !is_there_a_question_mark {
+        let error_message = ["error: query is not defined url: ", url].join("");
+        return Err((error_message.to_string()))
+    }
+
+    let (_, url) = url.split_once("?").unwrap();
+
+    if is_there_a_hash {
+        let (query, rest) = url.split_once("#").unwrap();
+        let rest = ["#".to_string(), rest.to_string()].join("");
+        return Ok((query.to_string(), Option::from(rest.to_string())))
+    } else {
+        return Ok((url.to_string(), None))
+    }
+
+}
+
 
 
 
 #[cfg(test)]
 mod tests {
-    use crate::{extract_authority, extract_path, extract_scheme, parse_url};
+    use crate::{extract_authority, extract_path, extract_query, extract_scheme, parse_url};
 
     #[test]
     fn extract_scheme_test() {
@@ -325,6 +351,42 @@ mod tests {
         let boxed_result = extract_path(remaining_url);
         assert!(boxed_result.is_err());
         assert_eq!("error: remaining url is empty", boxed_result.err().unwrap());
+    }
+
+    #[test]
+    fn extract_query_empty_remaining_url() {
+        let remaining_url = "";
+        let boxed_result = extract_query(remaining_url);
+        assert!(boxed_result.is_err());
+        assert_eq!("error: remaining url is empty", boxed_result.err().unwrap());
+    }
+
+    #[test]
+    fn extract_query_query_undefined() {
+        let remaining_url = "sometext#qweqwe";
+        let boxed_result = extract_query(remaining_url);
+        assert!(boxed_result.is_err());
+        assert_eq!("error: query is not defined url: sometext#qweqwe", boxed_result.err().unwrap());
+    }
+
+    #[test]
+    fn extract_query_query_defined_fragment_undefined() {
+        let remaining_url = "?q=query";
+        let boxed_result = extract_query(remaining_url);
+        let (query, remaining_url) = boxed_result.unwrap();
+
+        assert_eq!("q=query", query);
+        assert_eq!(None, remaining_url);
+    }
+
+    #[test]
+    fn extract_query_query_defined_fragment_defined() {
+        let remaining_url = "?q=query#fragment1";
+        let boxed_result = extract_query(remaining_url);
+        let (query, remaining_url) = boxed_result.unwrap();
+
+        assert_eq!("q=query", query);
+        assert_eq!("#fragment1", remaining_url.unwrap());
     }
 
     #[test]
