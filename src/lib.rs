@@ -100,12 +100,59 @@ pub(crate) fn extract_authority(url: &str) -> Result<(String, Option<String>), S
 
 }
 
+pub(crate) fn extract_path(url: &str) -> Result<(String, Option<String>), String> {
+    if url.chars().count() == 0 {
+        let error_message = ["error: remaining url is empty ", url].join("");
+        return Err(error_message.to_string())
+    }
+
+    let mut is_there_a_slash = url.contains("/");
+    let mut is_there_a_question_mark = url.contains("?");
+    let mut is_there_a_hash = url.contains("#");
+
+    if !is_there_a_slash && !is_there_a_question_mark && !is_there_a_hash {
+        let error_message = ["error: not valid remaining url ", url].join("");
+        return Err((error_message.to_string()))
+    }
+
+    if is_there_a_slash {
+        let boxed_split = url.split_once("/");
+        if boxed_split.is_some() {
+            let (_, path_query_url) = boxed_split.unwrap();
+            let mut path = "";
+            let mut remaining_url = "".to_string();
+
+            if is_there_a_question_mark {
+                let (_path, rest) = path_query_url.split_once("?").unwrap();
+                path = _path;
+                remaining_url = [&"?", rest].join("");
+            }
+
+            if !is_there_a_question_mark && is_there_a_hash {
+                let (_path, rest) = path_query_url.split_once("#").unwrap();
+                path = _path;
+                remaining_url = [&"#", rest].join("");
+            }
+
+            if !is_there_a_question_mark && !is_there_a_hash {
+                path = path_query_url;
+            }
+
+            return Ok((path.to_string(), Option::from(remaining_url)))
+        }
+    }
+
+    let error_message = ["error: something went wrong with remaining url ", url].join("");
+    Err(error_message.to_string())
+
+}
+
 
 
 
 #[cfg(test)]
 mod tests {
-    use crate::{extract_authority, extract_scheme, parse_url};
+    use crate::{extract_authority, extract_path, extract_scheme, parse_url};
 
     #[test]
     fn extract_scheme_test() {
@@ -175,6 +222,16 @@ mod tests {
 
         assert_eq!("example.com", authority);
         assert_eq!("/some-path#123", remaining_url.unwrap());
+    }
+
+    #[test]
+    fn extract_path_path_defined_query_undefined_fragment_defined() {
+        let remaining_url = "/some-path#123";
+        let boxed_result = extract_path(remaining_url);
+        let (path, remaining_url) = boxed_result.unwrap();
+
+        assert_eq!("some-path", path);
+        assert_eq!("#123", remaining_url.unwrap());
     }
 
 
