@@ -95,8 +95,8 @@ pub(crate) fn extract_authority(url: &str) -> Result<(String, Option<String>), S
         }
     }
 
-
-    Err("not implemented yet".to_string())
+    let error_message = ["error: something went wrong with remaining url ", url].join("");
+    Err(error_message.to_string())
 
 }
 
