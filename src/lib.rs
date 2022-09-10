@@ -119,26 +119,27 @@ pub(crate) fn extract_path(url: &str) -> Result<(String, Option<String>), String
         let boxed_split = url.split_once("/");
         if boxed_split.is_some() {
             let (_, path_query_url) = boxed_split.unwrap();
-            let mut path = "";
+            let mut path = "".to_string();
             let mut remaining_url = "".to_string();
 
             if is_there_a_question_mark {
                 let (_path, rest) = path_query_url.split_once("?").unwrap();
-                path = _path;
+                path = _path.to_string();
                 remaining_url = [&"?", rest].join("");
             }
 
             if !is_there_a_question_mark && is_there_a_hash {
                 let (_path, rest) = path_query_url.split_once("#").unwrap();
-                path = _path;
+                path = _path.to_string();
                 remaining_url = [&"#", rest].join("");
             }
 
             if !is_there_a_question_mark && !is_there_a_hash {
-                path = path_query_url;
+                path = path_query_url.to_string();
             }
 
-            return Ok((path.to_string(), Option::from(remaining_url)))
+            let resulting_path = ["/".to_string(), path].join("");
+            return Ok((resulting_path.to_string(), Option::from(remaining_url)))
         }
     }
 
@@ -230,7 +231,7 @@ mod tests {
         let boxed_result = extract_path(remaining_url);
         let (path, remaining_url) = boxed_result.unwrap();
 
-        assert_eq!("some-path", path);
+        assert_eq!("/some-path", path);
         assert_eq!("#123", remaining_url.unwrap());
     }
 
@@ -240,7 +241,7 @@ mod tests {
         let boxed_result = extract_path(remaining_url);
         let (path, remaining_url) = boxed_result.unwrap();
 
-        assert_eq!("some-path", path);
+        assert_eq!("/some-path", path);
         assert_eq!("?q=query#123", remaining_url.unwrap());
     }
 
@@ -250,7 +251,7 @@ mod tests {
         let boxed_result = extract_path(remaining_url);
         let (path, remaining_url) = boxed_result.unwrap();
 
-        assert_eq!("some-path", path);
+        assert_eq!("/some-path", path);
         assert_eq!("?q=query", remaining_url.unwrap());
     }
 
@@ -260,7 +261,7 @@ mod tests {
         let boxed_result = extract_path(remaining_url);
         let (path, remaining_url) = boxed_result.unwrap();
 
-        assert_eq!("", path);
+        assert_eq!("/", path);
         assert_eq!("?q=query", remaining_url.unwrap());
     }
 
