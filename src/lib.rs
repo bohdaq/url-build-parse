@@ -168,6 +168,17 @@ mod tests {
     }
 
     #[test]
+    fn extract_authority_path_defined_query_undefined_fragment_defined() {
+        let remaining_url = "example.com/some-path#123";
+        let boxed_result = extract_authority(remaining_url);
+        let (authority, remaining_url) = boxed_result.unwrap();
+
+        assert_eq!("example.com", authority);
+        assert_eq!("/some-path#123", remaining_url.unwrap());
+    }
+
+
+    #[test]
     fn parse_simple_url() {
         let url = "https://example.com";
         let url_components = parse_url(url);
