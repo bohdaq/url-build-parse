@@ -425,6 +425,14 @@ mod tests {
     }
 
     #[test]
+    fn extract_fragment_defined() {
+        let remaining_url = "#test";
+        let boxed_result = extract_fragment(remaining_url);
+        assert!(boxed_result.is_ok());
+        assert_eq!("#test", boxed_result.unwrap());
+    }
+
+    #[test]
     fn parse_simple_url() {
         let url = "https://example.com";
         let url_components = parse_url(url);
