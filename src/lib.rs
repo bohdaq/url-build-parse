@@ -143,6 +143,10 @@ pub(crate) fn extract_path(url: &str) -> Result<(String, Option<String>), String
         }
     }
 
+    if !is_there_a_slash {
+        return Ok(("".to_string(), Option::from(url.to_string())))
+    }
+
     let error_message = ["error: something went wrong with remaining url ", url].join("");
     Err(error_message.to_string())
 
@@ -262,6 +266,36 @@ mod tests {
         let (path, remaining_url) = boxed_result.unwrap();
 
         assert_eq!("/", path);
+        assert_eq!("?q=query", remaining_url.unwrap());
+    }
+
+    #[test]
+    fn extract_path_path_zero_length_query_defined_fragment_defined() {
+        let remaining_url = "?q=query#fragment";
+        let boxed_result = extract_path(remaining_url);
+        let (path, remaining_url) = boxed_result.unwrap();
+
+        assert_eq!("", path);
+        assert_eq!("?q=query#fragment", remaining_url.unwrap());
+    }
+
+    #[test]
+    fn extract_path_path_zero_length_query_undefined_fragment_defined() {
+        let remaining_url = "#fragment";
+        let boxed_result = extract_path(remaining_url);
+        let (path, remaining_url) = boxed_result.unwrap();
+
+        assert_eq!("", path);
+        assert_eq!("#fragment", remaining_url.unwrap());
+    }
+
+    #[test]
+    fn extract_path_path_zero_length_query_defined_fragment_undefined() {
+        let remaining_url = "?q=query";
+        let boxed_result = extract_path(remaining_url);
+        let (path, remaining_url) = boxed_result.unwrap();
+
+        assert_eq!("", path);
         assert_eq!("?q=query", remaining_url.unwrap());
     }
 
