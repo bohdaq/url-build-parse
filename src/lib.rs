@@ -57,7 +57,8 @@ pub(crate) fn extract_scheme(url: &str) -> Result<(String, String), String> {
 
 pub(crate) fn extract_authority(url: &str) -> Result<(String, Option<String>), String> {
     if url.chars().count() == 0 {
-        return Err("unable to identify authority".to_string())
+        let error_message = "error: remaining url is empty";
+        return Err(error_message.to_string())
     }
 
     let mut is_there_a_slash = url.contains("/");
@@ -227,6 +228,25 @@ mod tests {
 
         assert_eq!("example.com", authority);
         assert_eq!("/some-path#123", remaining_url.unwrap());
+    }
+
+    #[test]
+    fn extract_authority_undefined_path_zero_length_query_undefined_fragment_undefined() {
+        let remaining_url = "";
+        let boxed_result = extract_authority(remaining_url);
+        assert!(boxed_result.is_err());
+        assert_eq!("error: remaining url is empty", boxed_result.err().unwrap());
+    }
+
+    #[test]
+    fn extract_authority_defined_path_zero_length_query_undefined_fragment_undefined() {
+        let remaining_url = "usr:pwd@host:443";
+        let boxed_result = extract_authority(remaining_url);
+
+        let (authority, remaining_url) = boxed_result.unwrap();
+
+        assert_eq!("usr:pwd@host:443", authority);
+        assert_eq!(None, remaining_url);
     }
 
     #[test]
