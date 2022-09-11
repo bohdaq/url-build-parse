@@ -11,7 +11,7 @@ pub struct UrlComponents {
 pub struct Authority {
     pub user_info: Option<UserInfo>,
     pub host: String,
-    pub port: Option<String>
+    pub port: Option<usize>
 }
 
 pub struct UserInfo {
@@ -218,12 +218,21 @@ pub(crate) fn extract_fragment(url: &str) -> Result<String, String> {
 
 }
 
+pub(crate) fn parse_authority(authority: &str) -> Result<(Option<UserInfo>, String, Option<usize>), String> {
+    let user_info: Option<UserInfo> = None;
+    let host = "".to_string();
+    let port : Option<usize> = None;
+
+
+    Ok((user_info, host, port))
+}
+
 
 
 
 #[cfg(test)]
 mod tests {
-    use crate::{extract_authority, extract_fragment, extract_path, extract_query, extract_scheme, parse_url};
+    use crate::{extract_authority, extract_fragment, extract_path, extract_query, extract_scheme, parse_authority, parse_url};
 
     #[test]
     fn extract_scheme_test() {
@@ -450,6 +459,28 @@ mod tests {
         let boxed_result = extract_fragment(remaining_url);
         assert!(boxed_result.is_ok());
         assert_eq!("#test", boxed_result.unwrap());
+    }
+
+    #[test]
+    fn parse_authority_parts() {
+        let authority = "usr:pwd@[2a01:5cc0:1:2::4]:80";
+        let boxed_result = parse_authority(authority);
+
+        assert!(boxed_result.is_ok());
+        let (boxed_user_info, host, boxed_port) = boxed_result.unwrap();
+
+        assert!(boxed_user_info.is_some());
+        let user_info = boxed_user_info.unwrap();
+
+        assert_eq!("usr", user_info.username);
+
+        assert!(user_info.password.is_some());
+        assert_eq!("pwd", user_info.password.unwrap());
+
+        assert_eq!("[2a01:5cc0:1:2::4]", host);
+
+        assert!(boxed_port.is_some());
+        assert_eq!(80, boxed_port.unwrap());
     }
 
     #[test]
