@@ -36,12 +36,12 @@ impl UrlComponents {
     }
 }
 
-pub fn parse_url(url: &str) -> UrlComponents {
+pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
     let mut url_components = UrlComponents::new();
 
     //let (scheme, remaining_url) = extract_scheme(url);
 
-    url_components
+    Ok(url_components)
 }
 
 pub(crate) fn extract_scheme(url: &str) -> Result<(String, String), String> {
