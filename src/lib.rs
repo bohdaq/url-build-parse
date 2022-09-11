@@ -3,7 +3,7 @@ use std::collections::HashMap;
 pub struct UrlComponents {
     pub scheme: String,
     pub authority: Authority,
-    pub path: String,
+    pub path: Path,
     pub query: Option<HashMap<String, String>>,
     pub fragment: Option<String>
 }
@@ -19,6 +19,11 @@ pub struct UserInfo {
     pub password: Option<String>
 }
 
+pub struct Path {
+    executable: String,
+    path_info: Option<String>
+}
+
 impl UrlComponents {
     pub fn new() -> UrlComponents {
         let url_components = UrlComponents {
@@ -28,7 +33,10 @@ impl UrlComponents {
                 host: "".to_string(),
                 port: None
             },
-            path: "".to_string(),
+            path: Path {
+                executable: "".to_string(),
+                path_info: None
+            },
             query: None,
             fragment: None
         };
@@ -435,11 +443,11 @@ mod tests {
     #[test]
     fn parse_simple_url() {
         let url = "https://example.com";
-        let url_components = parse_url(url);
+        let url_components = parse_url(url).unwrap();
 
 
         assert_eq!(url_components.scheme, "https");
         assert_eq!(url_components.authority.host, "example.com");
-        assert_eq!(url_components.path, "");
+        assert_eq!(url_components.path.executable, "");
     }
 }
