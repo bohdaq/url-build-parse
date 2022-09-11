@@ -47,7 +47,19 @@ impl UrlComponents {
 pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
     let mut url_components = UrlComponents::new();
 
-    //let (scheme, remaining_url) = extract_scheme(url);
+    let boxed_scheme = extract_scheme(url);
+    if boxed_scheme.is_err() {
+        return Err(boxed_scheme.err().unwrap());
+    }
+
+    let (scheme, remaining_url) = boxed_scheme.unwrap();
+    url_components.scheme = scheme;
+
+
+    let boxed_authority = extract_authority(remaining_url.as_str());
+    if boxed_authority.is_err() {
+        return Err(boxed_authority.err().unwrap());
+    }
 
     Ok(url_components)
 }
