@@ -264,7 +264,7 @@ pub(crate) fn parse_authority(authority: &str)
     let mut host = "".to_string();
     let mut port : Option<usize> = None;
 
-    let mut remaining_authority = "".to_string();
+    let mut remaining_authority = authority.to_string();
 
     let is_there_an_at_symbol = authority.contains("@");
     if is_there_an_at_symbol {
