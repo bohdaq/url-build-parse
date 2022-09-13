@@ -556,6 +556,7 @@ mod tests {
         assert_eq!(url_components.authority.user_info.as_ref().unwrap().username, "usr");
         assert_eq!(url_components.authority.user_info.as_ref().unwrap().password.as_ref().unwrap(), "pwd");
         assert_eq!(url_components.authority.host, "somehost");
+        assert_eq!(*url_components.authority.port.as_ref().unwrap() as u8, 80 as u8);
         assert_eq!(url_components.path.executable, "");
 
         assert!(false)
