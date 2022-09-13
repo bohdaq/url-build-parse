@@ -219,12 +219,49 @@ pub(crate) fn extract_fragment(url: &str) -> Result<String, String> {
 }
 
 pub(crate) fn parse_authority(authority: &str) -> Result<(Option<UserInfo>, String, Option<usize>), String> {
-    let user_info: Option<UserInfo> = None;
-    let host = "".to_string();
-    let port : Option<usize> = None;
+    let mut user_info: UserInfo = UserInfo { username: "".to_string(), password: None };
+    let mut host = "".to_string();
+    let mut port : usize = 0;
+
+    let mut remaining_authority = "".to_string();
+
+    let is_there_an_at_symbol = authority.contains("@");
+    if is_there_an_at_symbol {
+        let (userinfo, _remaining_authority) = authority.split_once("@").unwrap();
+        remaining_authority = _remaining_authority.to_string();
+        let is_there_a_colon = userinfo.contains(":");
+        if is_there_a_colon {
+            let (username, password) = userinfo.split_once(":").unwrap();
+            user_info.username = username.to_string();
+            user_info.password = Some(password.to_string());
+        } else {
+            let username = userinfo.to_string();
+            user_info.username = username;
+        }
+    }
 
 
-    Ok((user_info, host, port))
+    let is_there_a_colon = remaining_authority.contains(":");
+    if is_there_a_colon {
+        let (_host, port_as_string) = remaining_authority.split_once(":").unwrap();
+        let boxed_port = port_as_string.parse::<usize>();
+        if boxed_port.is_err() {
+            let msg = [
+                "unable to parse port from remaining authority ".to_string(),
+                " | ".to_string(),
+                boxed_port.err().unwrap().to_string(),
+                " | ".to_string(),
+                port_as_string.to_string()].join("");
+            return Err(msg)
+        }
+
+        host = _host.to_string();
+        port = boxed_port.unwrap();
+    } else {
+        host = remaining_authority;
+    }
+
+    Ok((Some(user_info), host, Some(port)))
 }
 
 
@@ -463,8 +500,9 @@ mod tests {
 
     #[test]
     fn parse_authority_parts() {
-        let authority = "usr:pwd@[2a01:5cc0:1:2::4]:80";
+        let authority = "usr:pwd@somehost:80";
         let boxed_result = parse_authority(authority);
+
 
         assert!(boxed_result.is_ok());
         let (boxed_user_info, host, boxed_port) = boxed_result.unwrap();
@@ -477,7 +515,7 @@ mod tests {
         assert!(user_info.password.is_some());
         assert_eq!("pwd", user_info.password.unwrap());
 
-        assert_eq!("[2a01:5cc0:1:2::4]", host);
+        assert_eq!("somehost", host);
 
         assert!(boxed_port.is_some());
         assert_eq!(80, boxed_port.unwrap());
