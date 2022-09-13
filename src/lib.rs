@@ -70,10 +70,18 @@ pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
         return Err(boxed_authority.err().unwrap());
     }
 
-    let (boxed_userinfo, host, boxed_port) = boxed_authority.unwrap();
-    if boxed_userinfo.is_some() {
-        url_components.authority.user_info = boxed_userinfo;
+    let (boxed_username, boxed_password, host, boxed_port) = boxed_authority.unwrap();
+    if boxed_username.is_some() {
+        url_components.authority.user_info =
+            Option::from(
+                UserInfo {
+                    username: boxed_username.unwrap(),
+                    password: boxed_password
+                });
     }
+
+
+
     url_components.authority.host = host;
     if boxed_port.is_some() {
         url_components.authority.port = boxed_port;
@@ -243,10 +251,18 @@ pub(crate) fn extract_fragment(url: &str) -> Result<String, String> {
 
 }
 
-pub(crate) fn parse_authority(authority: &str) -> Result<(Option<UserInfo>, String, Option<usize>), String> {
-    let mut user_info: UserInfo = UserInfo { username: "".to_string(), password: None };
+pub(crate) fn parse_authority(authority: &str)
+    -> Result<
+        (
+            Option<String>,
+            Option<String>,
+            String,
+            Option<usize>
+        ), String> {
+    let mut username : Option<String> = None;
+    let mut password : Option<String> = None;
     let mut host = "".to_string();
-    let mut port : usize = 0;
+    let mut port : Option<usize> = None;
 
     let mut remaining_authority = "".to_string();
 
@@ -256,12 +272,12 @@ pub(crate) fn parse_authority(authority: &str) -> Result<(Option<UserInfo>, Stri
         remaining_authority = _remaining_authority.to_string();
         let is_there_a_colon = userinfo.contains(":");
         if is_there_a_colon {
-            let (username, password) = userinfo.split_once(":").unwrap();
-            user_info.username = username.to_string();
-            user_info.password = Some(password.to_string());
+            let (_username, _password) = userinfo.split_once(":").unwrap();
+            username = Some(_username.to_string());
+            password = Some(_password.to_string());
         } else {
-            let username = userinfo.to_string();
-            user_info.username = username;
+            let _username = userinfo.to_string();
+            username = Some(_username);
         }
     }
 
@@ -281,12 +297,12 @@ pub(crate) fn parse_authority(authority: &str) -> Result<(Option<UserInfo>, Stri
         }
 
         host = _host.to_string();
-        port = boxed_port.unwrap();
+        port = Some(boxed_port.unwrap());
     } else {
         host = remaining_authority;
     }
 
-    Ok((Some(user_info), host, Some(port)))
+    Ok((username, password, host, port))
 }
 
 
@@ -530,15 +546,13 @@ mod tests {
 
 
         assert!(boxed_result.is_ok());
-        let (boxed_user_info, host, boxed_port) = boxed_result.unwrap();
+        let (boxed_username, boxed_password, host, boxed_port) = boxed_result.unwrap();
 
-        assert!(boxed_user_info.is_some());
-        let user_info = boxed_user_info.unwrap();
+        assert!(boxed_username.is_some());
+        assert_eq!("usr", boxed_username.unwrap());
 
-        assert_eq!("usr", user_info.username);
-
-        assert!(user_info.password.is_some());
-        assert_eq!("pwd", user_info.password.unwrap());
+        assert!(boxed_password.is_some());
+        assert_eq!("pwd", boxed_password.unwrap());
 
         assert_eq!("somehost", host);
 
@@ -553,14 +567,30 @@ mod tests {
 
 
         assert!(boxed_result.is_ok());
-        let (boxed_user_info, host, boxed_port) = boxed_result.unwrap();
+        let (boxed_username, boxed_password, host, boxed_port) = boxed_result.unwrap();
 
-        assert!(boxed_user_info.is_some());
-        let user_info = boxed_user_info.unwrap();
+        assert!(boxed_username.is_some());
+        assert_eq!("usr", boxed_username.unwrap());
 
-        assert_eq!("usr", user_info.username);
+        assert!(boxed_password.is_none());
 
-        assert!(user_info.password.is_none());
+        assert_eq!("somehost", host);
+
+        assert!(boxed_port.is_some());
+        assert_eq!(80, boxed_port.unwrap());
+    }
+
+    #[test]
+    fn parse_authority_parts_no_user_no_password() {
+        let authority = "somehost:80";
+        let boxed_result = parse_authority(authority);
+
+
+        assert!(boxed_result.is_ok());
+        let (boxed_username, boxed_password, host, boxed_port) = boxed_result.unwrap();
+
+        assert!(boxed_username.is_none());
+        assert!(boxed_password.is_none());
 
         assert_eq!("somehost", host);
 
