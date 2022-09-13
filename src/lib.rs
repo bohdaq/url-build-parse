@@ -553,6 +553,8 @@ mod tests {
 
 
         assert_eq!(url_components.scheme, "https");
+        assert_eq!(url_components.authority.user_info.as_ref().unwrap().username, "usr");
+        assert_eq!(url_components.authority.user_info.as_ref().unwrap().password.as_ref().unwrap(), "pwd");
         assert_eq!(url_components.authority.host, "somehost");
         assert_eq!(url_components.path.executable, "");
 
