@@ -64,10 +64,6 @@ pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
     }
 
     let (authority_string, boxed_remaining_url) = boxed_authority.unwrap();
-    if boxed_remaining_url.is_some() {
-        remaining_url = boxed_remaining_url.unwrap();
-    }
-
 
     let boxed_authority = parse_authority(authority_string.as_str());
     if boxed_authority.is_err() {
@@ -83,6 +79,11 @@ pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
         url_components.authority.port = boxed_port;
     }
 
+    if boxed_remaining_url.is_some() {
+        remaining_url = boxed_remaining_url.unwrap();
+    } else {
+        return Ok(url_components)
+    }
 
 
     Ok(url_components)
@@ -547,12 +548,14 @@ mod tests {
 
     #[test]
     fn parse_simple_url() {
-        let url = "https://example.com";
+        let url = "https://usr:pwd@somehost:80";
         let url_components = parse_url(url).unwrap();
 
 
         assert_eq!(url_components.scheme, "https");
-        assert_eq!(url_components.authority.host, "example.com");
+        assert_eq!(url_components.authority.host, "somehost");
         assert_eq!(url_components.path.executable, "");
+
+        assert!(false)
     }
 }
