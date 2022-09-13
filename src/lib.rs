@@ -46,20 +46,44 @@ impl UrlComponents {
 
 pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
     let mut url_components = UrlComponents::new();
+    let mut remaining_url = "".to_string();
 
     let boxed_scheme = extract_scheme(url);
     if boxed_scheme.is_err() {
         return Err(boxed_scheme.err().unwrap());
     }
 
-    let (scheme, remaining_url) = boxed_scheme.unwrap();
+    let (scheme, _remaining_url) = boxed_scheme.unwrap();
     url_components.scheme = scheme;
+    remaining_url = _remaining_url;
 
 
     let boxed_authority = extract_authority(remaining_url.as_str());
     if boxed_authority.is_err() {
         return Err(boxed_authority.err().unwrap());
     }
+
+    let (authority_string, boxed_remaining_url) = boxed_authority.unwrap();
+    if boxed_remaining_url.is_some() {
+        remaining_url = boxed_remaining_url.unwrap();
+    }
+
+
+    let boxed_authority = parse_authority(authority_string.as_str());
+    if boxed_authority.is_err() {
+        return Err(boxed_authority.err().unwrap());
+    }
+
+    let (boxed_userinfo, host, boxed_port) = boxed_authority.unwrap();
+    if boxed_userinfo.is_some() {
+        url_components.authority.user_info = boxed_userinfo;
+    }
+    url_components.authority.host = host;
+    if boxed_port.is_some() {
+        url_components.authority.port = boxed_port;
+    }
+
+
 
     Ok(url_components)
 }
