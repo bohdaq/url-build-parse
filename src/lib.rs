@@ -547,6 +547,28 @@ mod tests {
     }
 
     #[test]
+    fn parse_authority_parts_no_password() {
+        let authority = "usr@somehost:80";
+        let boxed_result = parse_authority(authority);
+
+
+        assert!(boxed_result.is_ok());
+        let (boxed_user_info, host, boxed_port) = boxed_result.unwrap();
+
+        assert!(boxed_user_info.is_some());
+        let user_info = boxed_user_info.unwrap();
+
+        assert_eq!("usr", user_info.username);
+
+        assert!(user_info.password.is_none());
+
+        assert_eq!("somehost", host);
+
+        assert!(boxed_port.is_some());
+        assert_eq!(80, boxed_port.unwrap());
+    }
+
+    #[test]
     fn parse_simple_url() {
         let url = "https://usr:pwd@somehost:80";
         let url_components = parse_url(url).unwrap();
