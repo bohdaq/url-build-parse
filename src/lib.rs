@@ -599,6 +599,63 @@ mod tests {
     }
 
     #[test]
+    fn parse_authority_parts_no_user_no_password_no_port() {
+        let authority = "somehost";
+        let boxed_result = parse_authority(authority);
+
+
+        assert!(boxed_result.is_ok());
+        let (boxed_username, boxed_password, host, boxed_port) = boxed_result.unwrap();
+
+        assert!(boxed_username.is_none());
+        assert!(boxed_password.is_none());
+
+        assert_eq!("somehost", host);
+
+        assert!(boxed_port.is_none());
+    }
+
+    #[test]
+    fn parse_authority_parts_no_password_no_port() {
+        let authority = "usr@somehost";
+        let boxed_result = parse_authority(authority);
+
+
+        assert!(boxed_result.is_ok());
+        let (boxed_username, boxed_password, host, boxed_port) = boxed_result.unwrap();
+
+        assert!(boxed_username.is_some());
+        assert_eq!("usr", boxed_username.unwrap());
+        assert!(boxed_password.is_none());
+
+        assert_eq!("somehost", host);
+
+        assert!(boxed_port.is_none());
+    }
+
+
+    #[test]
+    fn parse_authority_parts_no_port() {
+        let authority = "usr:pwd@somehost";
+        let boxed_result = parse_authority(authority);
+
+
+        assert!(boxed_result.is_ok());
+        let (boxed_username, boxed_password, host, boxed_port) = boxed_result.unwrap();
+
+        assert!(boxed_username.is_some());
+        assert_eq!("usr", boxed_username.unwrap());
+
+
+        assert!(boxed_password.is_some());
+        assert_eq!("pwd", boxed_password.unwrap());
+
+        assert_eq!("somehost", host);
+
+        assert!(boxed_port.is_none());
+    }
+
+    #[test]
     fn parse_simple_url() {
         let url = "https://usr:pwd@somehost:80";
         let url_components = parse_url(url).unwrap();
