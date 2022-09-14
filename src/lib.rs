@@ -65,7 +65,9 @@ pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
 
     let (authority_string, boxed_remaining_url) = boxed_authority.unwrap();
 
-    let boxed_authority = parse_authority(authority_string.as_str());
+
+
+    let boxed_authority = parse_authority(authority_string.unwrap().as_str());
     if boxed_authority.is_err() {
         return Err(boxed_authority.err().unwrap());
     }
@@ -99,7 +101,7 @@ pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
 }
 
 pub(crate) fn extract_scheme(url: &str) -> Result<(String, String), String> {
-    let boxed_split_at_path = url.split_once("://");
+    let boxed_split_at_path = url.split_once(":");
     if boxed_split_at_path.is_some() {
         let (scheme, remaining_url) = boxed_split_at_path.unwrap();
         Ok((scheme.to_string(), remaining_url.to_string()))
@@ -108,18 +110,26 @@ pub(crate) fn extract_scheme(url: &str) -> Result<(String, String), String> {
     }
 }
 
-pub(crate) fn extract_authority(url: &str) -> Result<(String, Option<String>), String> {
+pub(crate) fn extract_authority(mut url: &str) -> Result<(Option<String>, Option<String>), String> {
     if url.chars().count() == 0 {
         let error_message = "error: remaining url is empty";
         return Err(error_message.to_string())
     }
+
+    let  is_there_an_authority = url.contains("//");
+    if !is_there_an_authority {
+        return Ok((None, Option::from(url.to_string())));
+    }
+
+    let (_, _remaining_url) = url.split_once("//").unwrap();
+    url = _remaining_url;
 
     let  is_there_a_slash = url.contains("/");
     let  is_there_a_question_mark = url.contains("?");
     let  is_there_a_hash = url.contains("#");
 
     if !is_there_a_slash && !is_there_a_question_mark && !is_there_a_hash {
-        return Ok((url.to_string(), None))
+        return Ok((Option::from(url.to_string()), None))
     }
 
     if is_there_a_slash {
@@ -127,7 +137,9 @@ pub(crate) fn extract_authority(url: &str) -> Result<(String, Option<String>), S
         if boxed_split.is_some() {
             let (authority, remaining_url) = boxed_split.unwrap();
             let remaining_url = ["/", remaining_url].join("");
-            return Ok((authority.to_string(), Option::from(remaining_url.to_string())))
+            let authority_option = Option::from(authority.to_string());
+            let remaining_url = Option::from(remaining_url.to_string());
+            return Ok((authority_option, remaining_url))
         }
     }
 
@@ -135,8 +147,10 @@ pub(crate) fn extract_authority(url: &str) -> Result<(String, Option<String>), S
         let boxed_split = url.split_once("?");
         if boxed_split.is_some() {
             let (authority, remaining_url) = boxed_split.unwrap();
+            let authority_option = Option::from(authority.to_string());
             let remaining_url = ["?", remaining_url].join("");
-            return Ok((authority.to_string(), Option::from(remaining_url.to_string())))
+            let remaining_url = Option::from(remaining_url.to_string());
+            return Ok((authority_option, remaining_url))
         }
     }
 
@@ -145,7 +159,9 @@ pub(crate) fn extract_authority(url: &str) -> Result<(String, Option<String>), S
         if boxed_split.is_some() {
             let (authority, remaining_url) = boxed_split.unwrap();
             let remaining_url = ["#", remaining_url].join("");
-            return Ok((authority.to_string(), Option::from(remaining_url.to_string())))
+            let authority_option = Option::from(authority.to_string());
+            let remaining_url = Option::from(remaining_url.to_string());
+            return Ok((authority_option, remaining_url))
         }
     }
 
@@ -372,66 +388,86 @@ mod tests {
         let (scheme, remaining_url) = boxed_result.unwrap();
 
         assert_eq!("https", scheme);
-        assert_eq!("example.com", remaining_url);
+        assert_eq!("//example.com", remaining_url);
+    }
+
+    #[test]
+    fn extract_authority_test_no_authority() {
+        let remaining_url = "/path?q=qwerty";
+        let boxed_result = extract_authority(remaining_url);
+        let (authority, remaining_url) = boxed_result.unwrap();
+
+        assert_eq!(None, authority);
+        assert_eq!("/path?q=qwerty", remaining_url.unwrap());
+    }
+
+    #[test]
+    fn extract_authority_test_no_authority_no_slash() {
+        let remaining_url = "path?q=qwerty";
+        let boxed_result = extract_authority(remaining_url);
+        let (authority, remaining_url) = boxed_result.unwrap();
+
+        assert_eq!(None, authority);
+        assert_eq!("path?q=qwerty", remaining_url.unwrap());
     }
 
     #[test]
     fn extract_authority_test() {
-        let remaining_url = "example.com";
+        let remaining_url = "//example.com";
         let boxed_result = extract_authority(remaining_url);
         let (authority, remaining_url) = boxed_result.unwrap();
 
-        assert_eq!("example.com", authority);
+        assert_eq!("example.com", authority.unwrap());
         assert_eq!(None, remaining_url);
     }
 
     #[test]
     fn extract_authority_path_defined_query_defined_fragment_defined() {
-        let remaining_url = "example.com/some-path?q=test#123";
+        let remaining_url = "//example.com/some-path?q=test#123";
         let boxed_result = extract_authority(remaining_url);
         let (authority, remaining_url) = boxed_result.unwrap();
 
-        assert_eq!("example.com", authority);
+        assert_eq!("example.com", authority.unwrap());
         assert_eq!("/some-path?q=test#123", remaining_url.unwrap());
     }
 
     #[test]
     fn extract_authority_path_defined_as_slash_query_defined_fragment_defined() {
-        let remaining_url = "user:passwd@example.com:443/?q=test#123";
+        let remaining_url = "//user:passwd@example.com:443/?q=test#123";
         let boxed_result = extract_authority(remaining_url);
         let (authority, remaining_url) = boxed_result.unwrap();
 
-        assert_eq!("user:passwd@example.com:443", authority);
+        assert_eq!("user:passwd@example.com:443", authority.unwrap());
         assert_eq!("/?q=test#123", remaining_url.unwrap());
     }
 
     #[test]
     fn extract_authority_path_undefined_query_defined_fragment_defined() {
-        let remaining_url = "user:passwd@example.com?q=test#123";
+        let remaining_url = "//user:passwd@example.com?q=test#123";
         let boxed_result = extract_authority(remaining_url);
         let (authority, remaining_url) = boxed_result.unwrap();
 
-        assert_eq!("user:passwd@example.com", authority);
+        assert_eq!("user:passwd@example.com", authority.unwrap());
         assert_eq!("?q=test#123", remaining_url.unwrap());
     }
 
     #[test]
     fn extract_authority_path_undefined_query_undefined_fragment_defined() {
-        let remaining_url = "example.com:80#123";
+        let remaining_url = "//example.com:80#123";
         let boxed_result = extract_authority(remaining_url);
         let (authority, remaining_url) = boxed_result.unwrap();
 
-        assert_eq!("example.com:80", authority);
+        assert_eq!("example.com:80", authority.unwrap());
         assert_eq!("#123", remaining_url.unwrap());
     }
 
     #[test]
     fn extract_authority_path_defined_query_undefined_fragment_defined() {
-        let remaining_url = "example.com/some-path#123";
+        let remaining_url = "//example.com/some-path#123";
         let boxed_result = extract_authority(remaining_url);
         let (authority, remaining_url) = boxed_result.unwrap();
 
-        assert_eq!("example.com", authority);
+        assert_eq!("example.com", authority.unwrap());
         assert_eq!("/some-path#123", remaining_url.unwrap());
     }
 
@@ -445,12 +481,12 @@ mod tests {
 
     #[test]
     fn extract_authority_defined_path_zero_length_query_undefined_fragment_undefined() {
-        let remaining_url = "usr:pwd@host:443";
+        let remaining_url = "//usr:pwd@host:443";
         let boxed_result = extract_authority(remaining_url);
 
         let (authority, remaining_url) = boxed_result.unwrap();
 
-        assert_eq!("usr:pwd@host:443", authority);
+        assert_eq!("usr:pwd@host:443", authority.unwrap());
         assert_eq!(None, remaining_url);
     }
 
