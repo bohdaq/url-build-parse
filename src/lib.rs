@@ -87,11 +87,12 @@ pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
         url_components.authority.port = boxed_port;
     }
 
-    if boxed_remaining_url.is_some() {
-        remaining_url = boxed_remaining_url.unwrap();
-    } else {
+    if boxed_remaining_url.is_none() {
         return Ok(url_components)
     }
+
+    remaining_url = boxed_remaining_url.unwrap();
+    //TODO: path, query and fragment
 
 
     Ok(url_components)
