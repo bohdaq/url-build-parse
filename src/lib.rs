@@ -805,8 +805,27 @@ mod tests {
         assert_eq!("[2001:0db8:85a3:0000:0000:8a2e:0370:7334]", host);
 
         assert!(boxed_port.is_none());
+    }
+
+    #[test]
+    fn parse_authority_parts_usr_pwd_ip_v6_port() {
+        let authority = "usr:pwd@[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:80";
+        let boxed_result = parse_authority(authority);
 
 
+        assert!(boxed_result.is_ok());
+        let (boxed_username, boxed_password, host, boxed_port) = boxed_result.unwrap();
+
+        assert!(boxed_username.is_some());
+        assert_eq!("usr", boxed_username.unwrap());
+
+        assert!(boxed_password.is_some());
+        assert_eq!("pwd", boxed_password.unwrap());
+
+        assert_eq!("[2001:0db8:85a3:0000:0000:8a2e:0370:7334]", host);
+
+        assert!(boxed_port.is_some());
+        assert_eq!(80, boxed_port.unwrap());
     }
 
     #[test]
