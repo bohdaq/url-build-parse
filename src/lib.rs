@@ -266,6 +266,31 @@ pub(crate) fn parse_authority(authority: &str)
 
     let mut remaining_authority = authority.to_string();
 
+    let boxed_userinfo = extract_userinfo(remaining_authority.as_str());
+    let (_username, _password, _remaining_authority) = boxed_userinfo.unwrap();
+    remaining_authority = _remaining_authority;
+    username = _username;
+    password = _password;
+
+    let boxed_host = extract_host(remaining_authority.as_str());
+    let (_host, _remaining_authority) = boxed_host.unwrap();
+    host = _host;
+
+    if _remaining_authority.is_some() {
+        let boxed_port = extract_port(_remaining_authority.unwrap().as_str());
+        port = boxed_port.unwrap();
+    }
+
+    Ok((username, password, host, port))
+}
+
+pub(crate) fn extract_userinfo(authority: &str) -> Result<(Option<String>, Option<String>, String), String> {
+    let mut username : Option<String> = None;
+    let mut password : Option<String> = None;
+
+
+    let mut remaining_authority = authority.to_string();
+
     let is_there_an_at_symbol = authority.contains("@");
     if is_there_an_at_symbol {
         let (userinfo, _remaining_authority) = authority.split_once("@").unwrap();
@@ -281,10 +306,40 @@ pub(crate) fn parse_authority(authority: &str)
         }
     }
 
+    Ok((username, password, remaining_authority))
+}
 
-    let is_there_a_colon = remaining_authority.contains(":");
+pub(crate) fn extract_host(authority: &str) -> Result<(String, Option<String>), String> {
+    let mut host : String = authority.to_string();
+    let mut remaining_authority: Option<String> = None;
+
+    let is_it_an_ip_v6_url = authority.contains("]");
+    if is_it_an_ip_v6_url {
+        let (_host, _remaining_authority) = authority.split_once("]").unwrap();
+        host = [_host, "]"].join("");
+        let it_contains_port = _remaining_authority.contains(":");
+        if it_contains_port {
+            remaining_authority = Option::from(_remaining_authority.to_string());
+        }
+    } else {
+        let it_contains_port = authority.contains(":");
+        if it_contains_port {
+            let (_host, _remaining_authority) = authority.split_once(":").unwrap();
+            host = _host.to_string();
+            remaining_authority = Option::from([":", _remaining_authority].join(""));
+        }
+    }
+
+    Ok((host, remaining_authority))
+}
+
+pub(crate) fn extract_port(authority: &str) -> Result<Option<usize>, String> {
+    let mut port: Option<usize> = None;
+
+    let is_there_a_colon = authority.contains(":");
     if is_there_a_colon {
-        let (_host, port_as_string) = remaining_authority.split_once(":").unwrap();
+        let (_, port_as_string) = authority.split_once(":").unwrap();
+
         let boxed_port = port_as_string.parse::<usize>();
         if boxed_port.is_err() {
             let msg = [
@@ -296,13 +351,10 @@ pub(crate) fn parse_authority(authority: &str)
             return Err(msg)
         }
 
-        host = _host.to_string();
         port = Some(boxed_port.unwrap());
-    } else {
-        host = remaining_authority;
     }
 
-    Ok((username, password, host, port))
+    Ok(port)
 }
 
 
@@ -310,7 +362,7 @@ pub(crate) fn parse_authority(authority: &str)
 
 #[cfg(test)]
 mod tests {
-    use crate::{extract_authority, extract_fragment, extract_path, extract_query, extract_scheme, parse_authority, parse_url};
+    use crate::{extract_authority, extract_fragment, extract_host, extract_path, extract_query, extract_scheme, extract_userinfo, parse_authority, parse_url};
 
     #[test]
     fn extract_scheme_test() {
@@ -653,6 +705,108 @@ mod tests {
         assert_eq!("somehost", host);
 
         assert!(boxed_port.is_none());
+    }
+
+    #[test]
+    fn parse_extract_userinfo() {
+        let boxed_userinfo =
+            extract_userinfo(
+                "usr:pwd@[2001:0db8:85a3:0000:0000:8a2e:0370:7334]");
+        assert!(boxed_userinfo.is_ok());
+
+        let (username, password, remaining_authority) = boxed_userinfo.unwrap();
+
+        assert_eq!("usr", username.unwrap());
+        assert_eq!("pwd", password.unwrap());
+        assert_eq!("[2001:0db8:85a3:0000:0000:8a2e:0370:7334]", remaining_authority);
+    }
+
+
+    #[test]
+    fn parse_extract_userinfo_no_passwd() {
+        let boxed_userinfo =
+            extract_userinfo(
+                "usr@192.168.0.1");
+        assert!(boxed_userinfo.is_ok());
+
+        let (username, password, remaining_authority) = boxed_userinfo.unwrap();
+
+        assert_eq!("usr", username.unwrap());
+        assert_eq!(None, password);
+        assert_eq!("192.168.0.1", remaining_authority);
+    }
+
+    #[test]
+    fn parse_extract_userinfo_no_passwd_no_user() {
+        let boxed_userinfo =
+            extract_userinfo(
+                "somehost.com");
+        assert!(boxed_userinfo.is_ok());
+
+        let (username, password, remaining_authority) = boxed_userinfo.unwrap();
+
+        assert_eq!(None, username);
+        assert_eq!(None, password);
+        assert_eq!("somehost.com", remaining_authority);
+    }
+
+    #[test]
+    fn parse_extract_host_ip_v4() {
+        let (host, remaining_authority) =
+            extract_host("somehost.com:80".as_ref()).unwrap();
+
+        assert_eq!("somehost.com", host);
+        assert_eq!(":80", remaining_authority.unwrap());
+    }
+
+    #[test]
+    fn parse_extract_host_ip_v4_no_port() {
+        let (host, remaining_authority) =
+            extract_host("somehost.com".as_ref()).unwrap();
+
+        assert_eq!("somehost.com", host);
+        assert_eq!(None, remaining_authority);
+    }
+
+
+    #[test]
+    fn parse_extract_host_ip_v6() {
+        let (host, remaining_authority) =
+            extract_host("[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:80".as_ref()).unwrap();
+
+        assert_eq!("[2001:0db8:85a3:0000:0000:8a2e:0370:7334]", host);
+        assert_eq!(":80", remaining_authority.unwrap());
+    }
+
+    #[test]
+    fn parse_extract_host_ip_v6_no_port() {
+        let (host, remaining_authority) =
+            extract_host("[2001:0db8:85a3:0000:0000:8a2e:0370:7334]".as_ref()).unwrap();
+
+        assert_eq!("[2001:0db8:85a3:0000:0000:8a2e:0370:7334]", host);
+        assert_eq!(None, remaining_authority);
+    }
+
+    #[test]
+    fn parse_authority_parts_ip_v6() {
+        let authority = "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]";
+        let boxed_result = parse_authority(authority);
+
+
+        assert!(boxed_result.is_ok());
+
+        let (boxed_username, boxed_password, host, boxed_port) = boxed_result.unwrap();
+
+        assert!(boxed_username.is_none());
+
+
+        assert!(boxed_password.is_none());
+
+        assert_eq!("[2001:0db8:85a3:0000:0000:8a2e:0370:7334]", host);
+
+        assert!(boxed_port.is_none());
+
+
     }
 
     #[test]
