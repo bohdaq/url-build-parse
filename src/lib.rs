@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 pub struct UrlComponents {
     pub scheme: String,
-    pub authority: Authority,
+    pub authority: Option<Authority>,
     pub path: Path,
     pub query: Option<HashMap<String, String>>,
     pub fragment: Option<String>
@@ -28,11 +28,7 @@ impl UrlComponents {
     pub fn new() -> UrlComponents {
         let url_components = UrlComponents {
             scheme: "".to_string(),
-            authority: Authority {
-                user_info: None,
-                host: "".to_string(),
-                port: None
-            },
+            authority: None,
             path: Path {
                 executable: "".to_string(),
                 path_info: None
@@ -65,29 +61,29 @@ pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
 
     let (authority_string, boxed_remaining_url) = boxed_authority.unwrap();
 
+    if authority_string.is_some() {
+        let boxed_authority = parse_authority(authority_string.unwrap().as_str());
+        if boxed_authority.is_err() {
+            return Err(boxed_authority.err().unwrap());
+        }
 
+        let (boxed_username, boxed_password, host, boxed_port) = boxed_authority.unwrap();
+        if boxed_username.is_some() {
+            url_components.authority = Some(Authority{
+                user_info: Option::from(
+                    UserInfo {
+                        username: boxed_username.unwrap(),
+                        password: boxed_password
+                    }),
+                host,
+                port: boxed_port
+            });
 
-    let boxed_authority = parse_authority(authority_string.unwrap().as_str());
-    if boxed_authority.is_err() {
-        return Err(boxed_authority.err().unwrap());
+        }
+
     }
 
-    let (boxed_username, boxed_password, host, boxed_port) = boxed_authority.unwrap();
-    if boxed_username.is_some() {
-        url_components.authority.user_info =
-            Option::from(
-                UserInfo {
-                    username: boxed_username.unwrap(),
-                    password: boxed_password
-                });
-    }
 
-
-
-    url_components.authority.host = host;
-    if boxed_port.is_some() {
-        url_components.authority.port = boxed_port;
-    }
 
     if boxed_remaining_url.is_none() {
         return Ok(url_components)
@@ -866,16 +862,29 @@ mod tests {
     }
 
     #[test]
+    fn parse_simple_url_no_authority() {
+        let url = "mailto:user@host";
+        let url_components = parse_url(url).unwrap();
+
+
+        assert_eq!(url_components.scheme, "mailto");
+        assert!(url_components.authority.is_none());
+        assert_eq!(url_components.path.executable, "");
+
+        assert!(false)
+    }
+
+    #[test]
     fn parse_simple_url() {
         let url = "https://usr:pwd@somehost:80";
         let url_components = parse_url(url).unwrap();
 
 
         assert_eq!(url_components.scheme, "https");
-        assert_eq!(url_components.authority.user_info.as_ref().unwrap().username, "usr");
-        assert_eq!(url_components.authority.user_info.as_ref().unwrap().password.as_ref().unwrap(), "pwd");
-        assert_eq!(url_components.authority.host, "somehost");
-        assert_eq!(*url_components.authority.port.as_ref().unwrap() as u8, 80 as u8);
+        assert_eq!(url_components.authority.as_ref().unwrap().user_info.as_ref().unwrap().username, "usr");
+        assert_eq!(url_components.authority.as_ref().unwrap().user_info.as_ref().unwrap().password.as_ref().unwrap(), "pwd");
+        assert_eq!(url_components.authority.as_ref().unwrap().host, "somehost");
+        assert_eq!(*url_components.authority.as_ref().unwrap().port.as_ref().unwrap() as u8, 80 as u8);
         assert_eq!(url_components.path.executable, "");
 
         assert!(false)
