@@ -98,21 +98,25 @@ pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
     remaining_url = _remaining_url.unwrap();
 
 
-    let boxed_query = extract_query(remaining_url.as_str());
-    if boxed_query.is_err() {
-        return Err(boxed_query.err().unwrap());
+    let (boxed_query, _remaining_url) = extract_query(remaining_url.as_str());
+    if boxed_query.is_some() {
+        let query  = boxed_query.unwrap();
+        let parsed_query = parse_query(query.as_str()).unwrap();
+        let params: HashMap<String, String> = parse_url_search_params(parsed_query.as_str());
+        url_components.query = Some(params);
+        if _remaining_url.is_none() {
+            return Ok(url_components)
+        }
+        remaining_url = _remaining_url.unwrap();
     }
 
-    let (query , _remaining_url) = boxed_query.unwrap();
-    let params: HashMap<String, String> = parse_url_search_params(query.as_str());
-    url_components.query = Some(params);
-    if _remaining_url.is_none() {
-        return Ok(url_components)
+    let boxed_fragment = extract_fragment(remaining_url.as_str());
+    if boxed_fragment.is_err() {
+        return Err(boxed_fragment.err().unwrap());
     }
-    remaining_url = _remaining_url.unwrap();
 
-    //TODO: fragment
-
+    let fragment = parse_fragment(boxed_fragment.unwrap().as_str()).unwrap();
+    url_components.fragment = Option::from(fragment);
 
     Ok(url_components)
 }
@@ -220,28 +224,26 @@ pub(crate) fn extract_path(url: &str) -> Result<(String, Option<String>), String
 
 }
 
-pub(crate) fn extract_query(url: &str) -> Result<(String, Option<String>), String> {
+pub(crate) fn extract_query(mut url: &str) ->
+       (Option<String>, Option<String>) {
     if url.chars().count() == 0 {
-        let error_message = "error: remaining url is empty";
-        return Err(error_message.to_string())
+        return (None, None);
     }
 
-    let is_there_a_question_mark = url.contains("?");
     let is_there_a_hash = url.contains("#");
-
-    if !is_there_a_question_mark {
-        let error_message = ["error: query is not defined url: ", url].join("");
-        return Err(error_message.to_string())
-    }
-
-    let (_, url) = url.split_once("?").unwrap();
 
     if is_there_a_hash {
         let (query, rest) = url.split_once("#").unwrap();
         let rest = ["#".to_string(), rest.to_string()].join("");
-        Ok((query.to_string(), Option::from(rest.to_string())))
+        let mut query_option : Option<String> = None;
+
+        if query.chars().count() != 0 {
+            query_option = Some(query.to_string());
+        }
+
+        (query_option, Option::from(rest.to_string()))
     } else {
-        Ok((url.to_string(), None))
+        (Option::from(url.to_string()), None)
     }
 
 }
@@ -264,6 +266,18 @@ pub(crate) fn extract_fragment(url: &str) -> Result<String, String> {
     let fragment = ["#".to_string(), fragment.to_string()].join("");
     Ok(fragment.to_string())
 
+}
+
+pub(crate) fn parse_query(query_with_question_mark: &str) -> Result<String, String> {
+    let (_, query) = query_with_question_mark.split_once("?").unwrap();
+
+    Ok(query.to_string())
+}
+
+pub(crate) fn parse_fragment(url: &str) -> Result<String, String> {
+    let (_, fragment) = url.split_once("#").unwrap();
+
+    Ok(fragment.to_string())
 }
 
 pub(crate) fn parse_authority(authority: &str)
@@ -569,36 +583,34 @@ mod tests {
     #[test]
     fn extract_query_empty_remaining_url() {
         let remaining_url = "";
-        let boxed_result = extract_query(remaining_url);
-        assert!(boxed_result.is_err());
-        assert_eq!("error: remaining url is empty", boxed_result.err().unwrap());
+        let (boxed_query, _remaining_url) = extract_query(remaining_url);
+        assert!(boxed_query.is_none());
     }
 
     #[test]
     fn extract_query_query_undefined() {
-        let remaining_url = "sometext#qweqwe";
-        let boxed_result = extract_query(remaining_url);
-        assert!(boxed_result.is_err());
-        assert_eq!("error: query is not defined url: sometext#qweqwe", boxed_result.err().unwrap());
+        let remaining_url = "#qweqwe";
+        let (query, remaining_url) = extract_query(remaining_url);
+
+        assert!(query.is_none());
+        assert_eq!("#qweqwe", remaining_url.unwrap());
     }
 
     #[test]
     fn extract_query_query_defined_fragment_undefined() {
         let remaining_url = "?q=query";
-        let boxed_result = extract_query(remaining_url);
-        let (query, remaining_url) = boxed_result.unwrap();
+        let (query, _remaining_url) = extract_query(remaining_url);
 
-        assert_eq!("q=query", query);
-        assert_eq!(None, remaining_url);
+        assert_eq!("?q=query", query.unwrap());
+        assert_eq!(None, _remaining_url);
     }
 
     #[test]
     fn extract_query_query_defined_fragment_defined() {
         let remaining_url = "?q=query#fragment1";
-        let boxed_result = extract_query(remaining_url);
-        let (query, remaining_url) = boxed_result.unwrap();
+        let (query, remaining_url) = extract_query(remaining_url);
 
-        assert_eq!("q=query", query);
+        assert_eq!("?q=query", query.unwrap());
         assert_eq!("#fragment1", remaining_url.unwrap());
     }
 
@@ -877,13 +889,14 @@ mod tests {
 
     #[test]
     fn parse_simple_url_no_authority_with_query() {
-        let url = "mailto:user@host?subject=test";
+        let url = "mailto:user@host?subject=test#fragment";
 
         let url_components = parse_url(url).unwrap();
 
         assert_eq!(url_components.scheme, "mailto");
         assert!(url_components.authority.is_none());
         assert_eq!(url_components.path, "user@host");
+        assert_eq!(url_components.fragment.unwrap(), "fragment");
 
     }
 
@@ -896,6 +909,7 @@ mod tests {
         assert_eq!(url_components.scheme, "mailto");
         assert!(url_components.authority.is_none());
         assert_eq!(url_components.path, "user@host");
+        assert_eq!(url_components.fragment.unwrap(), "fragment");
 
     }
 
@@ -939,7 +953,8 @@ mod tests {
         assert_eq!(*url_components.authority.as_ref().unwrap().port.as_ref().unwrap() as u8, 80 as u8);
         assert_eq!(url_components.path, "/path");
         assert_eq!(url_components.query.as_ref().unwrap().get("param").unwrap(), "value");
-        assert!(url_components.query.as_ref().unwrap().get("anotherParam").is_some());
+        assert!(url_components.query.as_ref().unwrap().contains_key("anotherParam"));
+        assert_eq!("", url_components.query.as_ref().unwrap().get("anotherParam").unwrap());
 
         assert!(false)
     }
