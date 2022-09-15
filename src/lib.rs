@@ -947,14 +947,21 @@ mod tests {
 
 
         assert_eq!(url_components.scheme, "https");
-        assert_eq!(url_components.authority.as_ref().unwrap().user_info.as_ref().unwrap().username, "usr");
-        assert_eq!(url_components.authority.as_ref().unwrap().user_info.as_ref().unwrap().password.as_ref().unwrap(), "pwd");
-        assert_eq!(url_components.authority.as_ref().unwrap().host, "somehost");
-        assert_eq!(*url_components.authority.as_ref().unwrap().port.as_ref().unwrap() as u8, 80 as u8);
+        assert_eq!(url_components.authority.as_ref().unwrap().user_info.as_ref().unwrap()
+                       .username, "usr");
+        assert_eq!(url_components.authority.as_ref().unwrap().user_info.as_ref().unwrap()
+                       .password.as_ref().unwrap(), "pwd");
+        assert_eq!(url_components.authority.as_ref().unwrap()
+                       .host, "somehost");
+        assert_eq!(*url_components.authority.as_ref().unwrap()
+                        .port.as_ref().unwrap() as u8, 80 as u8);
         assert_eq!(url_components.path, "/path");
-        assert_eq!(url_components.query.as_ref().unwrap().get("param").unwrap(), "value");
-        assert!(url_components.query.as_ref().unwrap().contains_key("anotherParam"));
-        assert_eq!("", url_components.query.as_ref().unwrap().get("anotherParam").unwrap());
+        assert_eq!(url_components.query.as_ref().unwrap()
+                       .get("param").unwrap(), "value");
+        assert!(url_components.query.as_ref().unwrap()
+                        .contains_key("anotherParam"));
+        assert_eq!("", url_components.query.as_ref().unwrap()
+                        .get("anotherParam").unwrap());
 
         assert!(false)
     }
