@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use url_search_params;
+use url_search_params::parse_url_search_params;
 
 pub struct UrlComponents {
     pub scheme: String,
@@ -93,8 +95,23 @@ pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
     if _remaining_url.is_none() {
         return Ok(url_components)
     }
+    remaining_url = _remaining_url.unwrap();
 
-    //TODO: path, query and fragment
+
+    let boxed_query = extract_query(remaining_url.as_str());
+    if boxed_query.is_err() {
+        return Err(boxed_query.err().unwrap());
+    }
+
+    let (query , _remaining_url) = boxed_query.unwrap();
+    let params: HashMap<String, String> = parse_url_search_params(query.as_str());
+    url_components.query = Some(params);
+    if _remaining_url.is_none() {
+        return Ok(url_components)
+    }
+    remaining_url = _remaining_url.unwrap();
+
+    //TODO: fragment
 
 
     Ok(url_components)
@@ -911,7 +928,7 @@ mod tests {
 
     #[test]
     fn parse_simple_url() {
-        let url = "https://usr:pwd@somehost:80/path?query#fragment";
+        let url = "https://usr:pwd@somehost:80/path?param=value&anotherParam#fragment";
         let url_components = parse_url(url).unwrap();
 
 
@@ -921,6 +938,8 @@ mod tests {
         assert_eq!(url_components.authority.as_ref().unwrap().host, "somehost");
         assert_eq!(*url_components.authority.as_ref().unwrap().port.as_ref().unwrap() as u8, 80 as u8);
         assert_eq!(url_components.path, "/path");
+        assert_eq!(url_components.query.as_ref().unwrap().get("param").unwrap(), "value");
+        assert!(url_components.query.as_ref().unwrap().get("anotherParam").is_some());
 
         assert!(false)
     }
