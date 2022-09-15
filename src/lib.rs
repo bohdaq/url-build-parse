@@ -36,7 +36,6 @@ impl UrlComponents {
 
 pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
     let mut url_components = UrlComponents::new();
-    let mut remaining_url = "".to_string();
 
     let boxed_scheme = extract_scheme(url);
     if boxed_scheme.is_err() {
@@ -45,7 +44,7 @@ pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
 
     let (scheme, _remaining_url) = boxed_scheme.unwrap();
     url_components.scheme = scheme;
-    remaining_url = _remaining_url;
+    let mut remaining_url = _remaining_url;
 
 
     let boxed_authority = extract_authority(remaining_url.as_str());
@@ -210,8 +209,8 @@ pub(crate) fn extract_path(url: &str) -> Result<(String, Option<String>), String
     let boxed_split = url.split_once(&delimiter);
     if boxed_split.is_some() {
         let (_path, _rest) = boxed_split.unwrap();
-        let mut path = _path.to_string();
-        let mut remaining_url: String =
+        let path = _path.to_string();
+        let remaining_url: String =
             [delimiter.to_string(), _rest.to_string()].join("");
 
         return Ok((path.to_string(), Option::from(remaining_url)));
@@ -223,7 +222,7 @@ pub(crate) fn extract_path(url: &str) -> Result<(String, Option<String>), String
 
 }
 
-pub(crate) fn extract_query(mut url: &str) ->
+pub(crate) fn extract_query(url: &str) ->
        (Option<String>, Option<String>) {
     if url.chars().count() == 0 {
         return (None, None);
@@ -287,9 +286,6 @@ pub(crate) fn parse_authority(authority: &str)
             String,
             Option<usize>
         ), String> {
-    let mut username : Option<String> = None;
-    let mut password : Option<String> = None;
-    let mut host = "".to_string();
     let mut port : Option<usize> = None;
 
     let mut remaining_authority = authority.to_string();
@@ -297,12 +293,12 @@ pub(crate) fn parse_authority(authority: &str)
     let boxed_userinfo = extract_userinfo(remaining_authority.as_str());
     let (_username, _password, _remaining_authority) = boxed_userinfo.unwrap();
     remaining_authority = _remaining_authority;
-    username = _username;
-    password = _password;
+    let username = _username;
+    let password = _password;
 
     let boxed_host = extract_host(remaining_authority.as_str());
     let (_host, _remaining_authority) = boxed_host.unwrap();
-    host = _host;
+    let host = _host;
 
     if _remaining_authority.is_some() {
         let boxed_port = extract_port(_remaining_authority.unwrap().as_str());
