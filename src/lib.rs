@@ -29,8 +29,7 @@ impl UrlComponents {
             authority: None,
             path: "".to_string(),
             query: None,
-            fragment: None
-        };
+            fragment: None };
         url_components
     }
 }
@@ -391,7 +390,16 @@ pub(crate) fn extract_port(authority: &str) -> Result<Option<usize>, String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{extract_authority, extract_fragment, extract_host, extract_path, extract_query, extract_scheme, extract_userinfo, parse_authority, parse_url};
+    use crate::{extract_authority, extract_fragment, extract_host, extract_path, extract_port, extract_query, extract_scheme, extract_userinfo, parse_authority, parse_url};
+
+    #[test]
+    fn extract_scheme_test_no_delimiter() {
+        let url = "schemewithoutdelimiter";
+        let boxed_result = extract_scheme(url);
+
+        assert!(boxed_result.is_err());
+        assert_eq!("unable to identify scheme", boxed_result.err().unwrap());
+    }
 
     #[test]
     fn extract_scheme_test() {
@@ -926,6 +934,20 @@ mod tests {
     }
 
     #[test]
+    fn extract_port_test() {
+        let boxed_port = extract_port(":80");
+        assert!(boxed_port.is_ok());
+        assert_eq!(80, boxed_port.unwrap().unwrap());
+    }
+
+    #[test]
+    fn extract_port_test_fail() {
+        let boxed_port = extract_port(":someport");
+        assert!(boxed_port.is_err());
+        assert_eq!("unable to parse port from remaining authority  | invalid digit found in string | someport", boxed_port.err().unwrap());
+    }
+
+    #[test]
     fn parse_simple_url_no_path_no_query_no_fragment() {
         let url = "https://usr:pwd@somehost:80";
         let url_components = parse_url(url).unwrap();
@@ -963,6 +985,5 @@ mod tests {
         assert_eq!("", url_components.query.as_ref().unwrap()
                         .get("anotherParam").unwrap());
 
-        assert!(false)
     }
 }
