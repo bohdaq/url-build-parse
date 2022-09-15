@@ -291,14 +291,11 @@ pub(crate) fn parse_authority(authority: &str)
     let mut remaining_authority = authority.to_string();
 
     let boxed_userinfo = extract_userinfo(remaining_authority.as_str());
-    let (_username, _password, _remaining_authority) = boxed_userinfo.unwrap();
+    let (username, password, _remaining_authority) = boxed_userinfo.unwrap();
     remaining_authority = _remaining_authority;
-    let username = _username;
-    let password = _password;
 
     let boxed_host = extract_host(remaining_authority.as_str());
-    let (_host, _remaining_authority) = boxed_host.unwrap();
-    let host = _host;
+    let (host, _remaining_authority) = boxed_host.unwrap();
 
     if _remaining_authority.is_some() {
         let boxed_port = extract_port(_remaining_authority.unwrap().as_str());
