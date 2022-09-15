@@ -390,7 +390,17 @@ pub(crate) fn extract_port(authority: &str) -> Result<Option<usize>, String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{extract_authority, extract_fragment, extract_host, extract_path, extract_port, extract_query, extract_scheme, extract_userinfo, parse_authority, parse_url};
+    use crate::{
+        extract_authority,
+        extract_fragment,
+        extract_host,
+        extract_path,
+        extract_port,
+        extract_query,
+        extract_scheme,
+        extract_userinfo,
+        parse_authority,
+        parse_url};
 
     #[test]
     fn extract_scheme_test_no_delimiter() {
