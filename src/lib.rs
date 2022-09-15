@@ -3,7 +3,7 @@ use std::collections::HashMap;
 pub struct UrlComponents {
     pub scheme: String,
     pub authority: Option<Authority>,
-    pub path: Path,
+    pub path: String,
     pub query: Option<HashMap<String, String>>,
     pub fragment: Option<String>
 }
@@ -19,20 +19,13 @@ pub struct UserInfo {
     pub password: Option<String>
 }
 
-pub struct Path {
-    executable: String,
-    path_info: Option<String>
-}
 
 impl UrlComponents {
     pub fn new() -> UrlComponents {
         let url_components = UrlComponents {
             scheme: "".to_string(),
             authority: None,
-            path: Path {
-                executable: "".to_string(),
-                path_info: None
-            },
+            path: "".to_string(),
             query: None,
             fragment: None
         };
@@ -88,8 +81,19 @@ pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
     if boxed_remaining_url.is_none() {
         return Ok(url_components)
     }
-
     remaining_url = boxed_remaining_url.unwrap();
+
+    let boxed_path = extract_path(remaining_url.as_str());
+    if boxed_path.is_err() {
+        return Err(boxed_path.err().unwrap());
+    }
+    let (_path, _remaining_url) = boxed_path.unwrap();
+
+    url_components.path = _path;
+    if _remaining_url.is_none() {
+        return Ok(url_components)
+    }
+
     //TODO: path, query and fragment
 
 
@@ -112,9 +116,8 @@ pub(crate) fn extract_authority(mut url: &str) -> Result<(Option<String>, Option
         return Err(error_message.to_string())
     }
 
-    let  is_there_an_authority = url.contains("//");
-    if !is_there_an_authority {
-        return Ok((None, Option::from(url.to_string())));
+    if !url.contains("//") {
+        return Ok((None, Option::from(url.to_string())))
     }
 
     let (_, _remaining_url) = url.split_once("//").unwrap();
@@ -172,46 +175,28 @@ pub(crate) fn extract_path(url: &str) -> Result<(String, Option<String>), String
         return Err(error_message.to_string())
     }
 
-    let is_there_a_slash = url.contains("/");
     let is_there_a_question_mark = url.contains("?");
     let is_there_a_hash = url.contains("#");
 
-    if !is_there_a_slash && !is_there_a_question_mark && !is_there_a_hash {
-        let error_message = ["error: not valid remaining url ", url].join("");
-        return Err(error_message.to_string())
+    if !is_there_a_question_mark && !is_there_a_hash {
+        return Ok((url.to_string(), None));
     }
 
-    if is_there_a_slash {
-        let boxed_split = url.split_once("/");
-        if boxed_split.is_some() {
-            let (_, path_query_url) = boxed_split.unwrap();
-            let mut path = "".to_string();
-            let mut remaining_url = "".to_string();
-
-            if is_there_a_question_mark {
-                let (_path, rest) = path_query_url.split_once("?").unwrap();
-                path = _path.to_string();
-                remaining_url = [&"?", rest].join("");
-            }
-
-            if !is_there_a_question_mark && is_there_a_hash {
-                let (_path, rest) = path_query_url.split_once("#").unwrap();
-                path = _path.to_string();
-                remaining_url = [&"#", rest].join("");
-            }
-
-            if !is_there_a_question_mark && !is_there_a_hash {
-                path = path_query_url.to_string();
-            }
-
-            let resulting_path = ["/".to_string(), path].join("");
-            return Ok((resulting_path.to_string(), Option::from(remaining_url)))
-        }
+    let mut delimiter = "?";
+    if !is_there_a_question_mark && is_there_a_hash {
+        delimiter = "#";
     }
 
-    if !is_there_a_slash {
-        return Ok(("".to_string(), Option::from(url.to_string())))
+    let boxed_split = url.split_once(&delimiter);
+    if boxed_split.is_some() {
+        let (_path, _rest) = boxed_split.unwrap();
+        let mut path = _path.to_string();
+        let mut remaining_url: String =
+            [delimiter.to_string(), _rest.to_string()].join("");
+
+        return Ok((path.to_string(), Option::from(remaining_url)));
     }
+
 
     let error_message = ["error: something went wrong with remaining url ", url].join("");
     Err(error_message.to_string())
@@ -864,18 +849,53 @@ mod tests {
     #[test]
     fn parse_simple_url_no_authority() {
         let url = "mailto:user@host";
-        let url_components = parse_url(url).unwrap();
 
+        let url_components = parse_url(url).unwrap();
 
         assert_eq!(url_components.scheme, "mailto");
         assert!(url_components.authority.is_none());
-        assert_eq!(url_components.path.executable, "");
+        assert_eq!(url_components.path, "user@host");
 
-        assert!(false)
     }
 
     #[test]
-    fn parse_simple_url() {
+    fn parse_simple_url_no_authority_with_query() {
+        let url = "mailto:user@host?subject=test";
+
+        let url_components = parse_url(url).unwrap();
+
+        assert_eq!(url_components.scheme, "mailto");
+        assert!(url_components.authority.is_none());
+        assert_eq!(url_components.path, "user@host");
+
+    }
+
+    #[test]
+    fn parse_simple_url_no_authority_with_fragment() {
+        let url = "mailto:user@host#fragment";
+
+        let url_components = parse_url(url).unwrap();
+
+        assert_eq!(url_components.scheme, "mailto");
+        assert!(url_components.authority.is_none());
+        assert_eq!(url_components.path, "user@host");
+
+    }
+
+    #[test]
+    fn parse_simple_url_no_authority_with_query_with_fragment() {
+        let url = "mailto:user@host?q=123#fragment";
+
+        let url_components = parse_url(url).unwrap();
+
+        assert_eq!(url_components.scheme, "mailto");
+        assert!(url_components.authority.is_none());
+        assert_eq!(url_components.path, "user@host");
+
+    }
+
+    #[test]
+    fn parse_simple_url_no_path_no_query_no_fragment() {
         let url = "https://usr:pwd@somehost:80";
         let url_components = parse_url(url).unwrap();
 
@@ -885,7 +905,22 @@ mod tests {
         assert_eq!(url_components.authority.as_ref().unwrap().user_info.as_ref().unwrap().password.as_ref().unwrap(), "pwd");
         assert_eq!(url_components.authority.as_ref().unwrap().host, "somehost");
         assert_eq!(*url_components.authority.as_ref().unwrap().port.as_ref().unwrap() as u8, 80 as u8);
-        assert_eq!(url_components.path.executable, "");
+        assert_eq!(url_components.path, "");
+
+    }
+
+    #[test]
+    fn parse_simple_url() {
+        let url = "https://usr:pwd@somehost:80/path?query#fragment";
+        let url_components = parse_url(url).unwrap();
+
+
+        assert_eq!(url_components.scheme, "https");
+        assert_eq!(url_components.authority.as_ref().unwrap().user_info.as_ref().unwrap().username, "usr");
+        assert_eq!(url_components.authority.as_ref().unwrap().user_info.as_ref().unwrap().password.as_ref().unwrap(), "pwd");
+        assert_eq!(url_components.authority.as_ref().unwrap().host, "somehost");
+        assert_eq!(*url_components.authority.as_ref().unwrap().port.as_ref().unwrap() as u8, 80 as u8);
+        assert_eq!(url_components.path, "/path");
 
         assert!(false)
     }
