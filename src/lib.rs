@@ -61,19 +61,36 @@ pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
         }
 
         let (boxed_username, boxed_password, host, boxed_port) = boxed_authority.unwrap();
-        if boxed_username.is_some() {
-            url_components.authority = Some(Authority{
-                user_info: Option::from(
-                    UserInfo {
-                        username: boxed_username.unwrap(),
-                        password: boxed_password
-                    }),
-                host,
-                port: boxed_port
-            });
 
+
+        let mut authority = Authority {
+            user_info: None,
+            host,
+            port: None
+        };
+
+        let mut user_info : Option<UserInfo> = None;
+
+        if boxed_username.is_some() {
+            let username = boxed_username.unwrap();
+            if user_info.is_none() {
+                let mut password : Option<String> = None;
+                if boxed_password.is_some() {
+                    password = boxed_password;
+                }
+                user_info = Some(UserInfo { username: username.to_string(), password });
+            }
+
+            authority.user_info = user_info;
         }
 
+
+        if boxed_port.is_some() {
+            let port = boxed_port;
+            authority.port = port;
+        }
+
+        url_components.authority = Option::from(authority);
     }
 
 
@@ -961,6 +978,20 @@ mod tests {
         assert_eq!(url_components.authority.as_ref().unwrap().user_info.as_ref().unwrap().password.as_ref().unwrap(), "pwd");
         assert_eq!(url_components.authority.as_ref().unwrap().host, "somehost");
         assert_eq!(*url_components.authority.as_ref().unwrap().port.as_ref().unwrap() as u8, 80 as u8);
+        assert_eq!(url_components.path, "");
+
+    }
+
+    #[test]
+    fn parse_simple_url_no_usr_no_pwd_no_path_no_query_no_fragment() {
+        let url = "https://somehost";
+        let url_components = parse_url(url).unwrap();
+
+
+        assert_eq!(url_components.scheme, "https");
+        assert!(url_components.authority.as_ref().unwrap().user_info.is_none());
+        assert!(url_components.authority.as_ref().unwrap().port.is_none());
+        assert_eq!(url_components.authority.as_ref().unwrap().host, "somehost");
         assert_eq!(url_components.path, "");
 
     }
