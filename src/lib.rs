@@ -865,13 +865,13 @@ mod tests {
 
     #[test]
     fn parse_simple_url_no_authority() {
-        let url = "mailto:user@host";
+        let url = "mailto:user@host,user2@host";
 
         let url_components = parse_url(url).unwrap();
 
         assert_eq!(url_components.scheme, "mailto");
         assert!(url_components.authority.is_none());
-        assert_eq!(url_components.path, "user@host");
+        assert_eq!(url_components.path, "user@host,user2@host");
 
     }
 
