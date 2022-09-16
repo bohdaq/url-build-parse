@@ -1259,4 +1259,17 @@ mod tests {
         assert_eq!(url_components.query, None);
         assert_eq!(url_components.fragment, None);
     }
+
+    #[test]
+    fn parse_simple_url_urn() {
+        let url = "urn:oasis:names:specification:docbook:dtd:xml:4.1.2";
+        let url_components = parse_url(url).unwrap();
+
+
+        assert_eq!(url_components.scheme, "urn");
+        assert_eq!(url_components.authority, None);
+        assert_eq!(url_components.path, "oasis:names:specification:docbook:dtd:xml:4.1.2");
+        assert_eq!(url_components.query, None);
+        assert_eq!(url_components.fragment, None);
+    }
 }
