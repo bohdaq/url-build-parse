@@ -993,6 +993,8 @@ mod tests {
         assert!(url_components.authority.as_ref().unwrap().port.is_none());
         assert_eq!(url_components.authority.as_ref().unwrap().host, "somehost");
         assert_eq!(url_components.path, "");
+        assert_eq!(url_components.query, None);
+        assert_eq!(url_components.fragment, None);
 
     }
 
