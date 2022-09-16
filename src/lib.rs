@@ -153,10 +153,10 @@ pub fn build_url(url_components: UrlComponents) -> Result<String, String> {
 
     if url_components.authority.is_some() {
         let authority = build_authority(url_components.authority.unwrap());
-        url = [authority, url].join("");
+        url = ["//".to_string(), authority, url].join("");
     }
 
-    url = [url_components.scheme, url].join("");
+    url = [url_components.scheme, ":".to_string(), url].join("");
 
     Ok(url)
 }
@@ -447,7 +447,8 @@ pub(crate) fn extract_port(authority: &str) -> Result<Option<usize>, String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{build_authority, extract_authority, extract_fragment, extract_host, extract_path, extract_port, extract_query, extract_scheme, extract_userinfo, parse_authority, parse_url, UrlAuthority, UrlUserInfo};
+    use std::collections::HashMap;
+    use crate::{build_authority, build_url, extract_authority, extract_fragment, extract_host, extract_path, extract_port, extract_query, extract_scheme, extract_userinfo, parse_authority, parse_url, UrlAuthority, UrlComponents, UrlUserInfo};
 
     #[test]
     fn extract_scheme_test_no_delimiter() {
@@ -1057,6 +1058,34 @@ mod tests {
         let url_authority = build_authority(authority);
 
         assert_eq!(url_authority, "usr:pwd@somehost");
+    }
+
+    #[test]
+    fn build_url_all_specified() {
+        let authority = UrlAuthority{
+            user_info: Option::from(UrlUserInfo { username: "usr".to_string(), password: Option::from("pwd".to_string()) }),
+            host: "somehost".to_string(),
+            port: Option::from(80)
+        };
+
+        let mut q = HashMap::new();
+        q.insert("q".to_string(), "123".to_string());
+        q.insert("w".to_string(), "456".to_string());
+
+
+        let url_components = UrlComponents{
+            scheme: "https".to_string(),
+            authority: Option::from(authority),
+            path: "/".to_string(),
+            query: Option::from(q),
+            fragment: Option::from("fragment".to_string())
+        };
+
+        let url = build_url(url_components.clone()).unwrap();
+
+        let parsed_url_components = parse_url(url.as_str()).unwrap();
+
+        assert_eq!(url_components, parsed_url_components);
     }
 
     #[test]
