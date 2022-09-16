@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use url_search_params;
-use url_search_params::parse_url_search_params;
+use url_search_params::{build_url_search_params, parse_url_search_params};
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct UrlComponents {
@@ -135,6 +135,52 @@ pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
     url_components.fragment = Option::from(fragment);
 
     Ok(url_components)
+}
+
+pub fn build_url(url_components: UrlComponents) -> Result<String, String> {
+    let mut url = "".to_string();
+
+    if url_components.fragment.is_some() {
+        url = ["#".to_string(),  url_components.fragment.unwrap(), url].join("");
+    }
+
+    if url_components.query.is_some() {
+        let query = build_url_search_params(url_components.query.unwrap());
+        url = ["?".to_string(), query, url].join("");
+    }
+
+    url = [url_components.path, url].join("");
+
+    if url_components.authority.is_some() {
+        let authority = build_authority(url_components.authority.unwrap());
+        url = [authority, url].join("");
+    }
+
+    url = [url_components.scheme, url].join("");
+
+    Ok(url)
+}
+
+pub(crate) fn build_authority(url_authority: UrlAuthority) -> String {
+    let mut authority = "".to_string();
+
+    if url_authority.user_info.is_some() {
+        let url_user_info = url_authority.user_info.unwrap();
+        authority = url_user_info.username;
+        if url_user_info.password.is_some() {
+            authority = [authority, ":".to_string(), url_user_info.password.unwrap()].join("");
+        }
+    }
+
+    if authority.chars().count() != 0 {
+        authority = [authority, "@".to_string(), url_authority.host].join("");
+    }
+
+    if url_authority.port.is_some() {
+        authority = [authority, ":".to_string(), url_authority.port.unwrap().to_string()].join("");
+    }
+
+    authority
 }
 
 pub(crate) fn extract_scheme(url: &str) -> Result<(String, String), String> {
@@ -401,17 +447,7 @@ pub(crate) fn extract_port(authority: &str) -> Result<Option<usize>, String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        extract_authority,
-        extract_fragment,
-        extract_host,
-        extract_path,
-        extract_port,
-        extract_query,
-        extract_scheme,
-        extract_userinfo,
-        parse_authority,
-        parse_url};
+    use crate::{build_authority, extract_authority, extract_fragment, extract_host, extract_path, extract_port, extract_query, extract_scheme, extract_userinfo, parse_authority, parse_url, UrlAuthority, UrlUserInfo};
 
     #[test]
     fn extract_scheme_test_no_delimiter() {
@@ -981,6 +1017,59 @@ mod tests {
         let boxed_port = extract_port(":someport");
         assert!(boxed_port.is_err());
         assert_eq!("unable to parse port from remaining authority  | invalid digit found in string | someport", boxed_port.err().unwrap());
+    }
+
+
+    #[test]
+    fn build_authority_host_empty() {
+        let authority = UrlAuthority{
+            user_info: None,
+            host: "".to_string(),
+            port: None
+        };
+
+        let url_authority = build_authority(authority);
+
+        assert_eq!(url_authority, "");
+    }
+
+    #[test]
+    fn build_authority_host_empty_usrname() {
+        let authority = UrlAuthority{
+            user_info: Option::from(UrlUserInfo { username: "usr".to_string(), password: None }),
+            host: "".to_string(),
+            port: None
+        };
+
+        let url_authority = build_authority(authority);
+
+        assert_eq!(url_authority, "usr@");
+    }
+
+    #[test]
+    fn build_authority_host_usrname_passwd() {
+        let authority = UrlAuthority{
+            user_info: Option::from(UrlUserInfo { username: "usr".to_string(), password: Option::from("pwd".to_string()) }),
+            host: "somehost".to_string(),
+            port: None
+        };
+
+        let url_authority = build_authority(authority);
+
+        assert_eq!(url_authority, "usr:pwd@somehost");
+    }
+
+    #[test]
+    fn build_authority_host_usrname_passwd_port() {
+        let authority = UrlAuthority{
+            user_info: Option::from(UrlUserInfo { username: "usr".to_string(), password: Option::from("pwd".to_string()) }),
+            host: "somehost".to_string(),
+            port: Option::from(80)
+        };
+
+        let url_authority = build_authority(authority);
+
+        assert_eq!(url_authority, "usr:pwd@somehost:80");
     }
 
     #[test]
