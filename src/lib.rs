@@ -1,3 +1,23 @@
+//! # url build parse
+//!
+//! `url-build-parse` provides the ability to parse and construct URL from parts.
+//!
+//! See [URL on Wikipedia](https://en.wikipedia.org/wiki/URL) and [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986) for more information.
+//!
+//! Some supported URLs as an example (but not limited to):
+//! - ftp://ftp.is.co.za/rfc/rfc1808.txt
+//! - http://www.ietf.org/rfc/rfc2396.txt
+//! - ldap://[2001:db8::7]/c=GB?objectClass?one
+//! - mailto:John.Doe@example.com
+//! - news:comp.infosystems.www.servers.unix
+//! - tel:+1-816-555-1212
+//! - telnet://192.0.2.16:80/
+//! - urn:oasis:names:specification:docbook:dtd:xml:4.1.2
+//!
+//! Take a look at tests to get information on how to use it.
+//!
+
+
 use std::collections::HashMap;
 use url_search_params;
 use url_search_params::{build_url_search_params, parse_url_search_params};
