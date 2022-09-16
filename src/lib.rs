@@ -1171,4 +1171,92 @@ mod tests {
                         .get("anotherParam").unwrap());
 
     }
+
+    #[test]
+    fn parse_simple_url_ftp() {
+        let url = "ftp://ftp.is.co.za/rfc/rfc1808.txt";
+        let url_components = parse_url(url).unwrap();
+
+
+        assert_eq!(url_components.scheme, "ftp");
+        assert_eq!(url_components.authority.as_ref().unwrap().user_info, None);
+        assert_eq!(url_components.authority.as_ref().unwrap()
+                       .host, "ftp.is.co.za");
+        assert_eq!(url_components.authority.as_ref().unwrap()
+            .port, None);
+        assert_eq!(url_components.path, "/rfc/rfc1808.txt");
+        assert_eq!(url_components.query, None);
+        assert_eq!(url_components.fragment, None);
+    }
+
+    #[test]
+    fn parse_simple_url_ldap() {
+        let url = "ldap://[2001:db8::7]/c=GB?objectClass?one";
+        let url_components = parse_url(url).unwrap();
+
+
+        assert_eq!(url_components.scheme, "ldap");
+        assert_eq!(url_components.authority.as_ref().unwrap().user_info, None);
+        assert_eq!(url_components.authority.as_ref().unwrap()
+                       .host, "[2001:db8::7]");
+        assert_eq!(url_components.authority.as_ref().unwrap()
+                       .port, None);
+        assert_eq!(url_components.path, "/c=GB");
+        assert!(url_components.query.unwrap().contains_key("objectClass?one"));
+        assert_eq!(url_components.fragment, None);
+    }
+
+    #[test]
+    fn parse_simple_url_news() {
+        let url = "news:comp.infosystems.www.servers.unix";
+        let url_components = parse_url(url).unwrap();
+
+
+        assert_eq!(url_components.scheme, "news");
+        assert_eq!(url_components.authority, None);
+        assert_eq!(url_components.path, "comp.infosystems.www.servers.unix");
+        assert_eq!(url_components.query, None);
+        assert_eq!(url_components.fragment, None);
+    }
+
+    #[test]
+    fn parse_simple_url_tel() {
+        let url = "tel:+1-816-555-1212";
+        let url_components = parse_url(url).unwrap();
+
+
+        assert_eq!(url_components.scheme, "tel");
+        assert_eq!(url_components.authority, None);
+        assert_eq!(url_components.path, "+1-816-555-1212");
+        assert_eq!(url_components.query, None);
+        assert_eq!(url_components.fragment, None);
+    }
+
+    #[test]
+    fn parse_simple_url_telnet() {
+        let url = "telnet://192.0.2.16:80/";
+        let url_components = parse_url(url).unwrap();
+
+
+        assert_eq!(url_components.scheme, "telnet");
+        assert_eq!(url_components.authority.as_ref().unwrap().user_info, None);
+        assert_eq!(url_components.authority.as_ref().unwrap().host, "192.0.2.16");
+        assert_eq!(url_components.authority.as_ref().unwrap().port.unwrap(), 80);
+        assert_eq!(url_components.path, "/");
+        assert_eq!(url_components.query, None);
+        assert_eq!(url_components.fragment, None);
+    }
+
+    #[test]
+    fn parse_simple_url_mailto() {
+        let url = "mailto:John.Doe@example.com";
+        let url_components = parse_url(url).unwrap();
+
+
+        assert_eq!(url_components.scheme, "mailto");
+        assert_eq!(url_components.authority, None);
+        assert_eq!(url_components.path, "John.Doe@example.com");
+        assert_eq!(url_components.query, None);
+        assert_eq!(url_components.fragment, None);
+    }
 }
