@@ -1,6 +1,6 @@
 //! # url build parse
 //!
-//! `url-build-parse` provides the ability to parse and construct URL from parts.
+//! `url-build-parse` provides the ability to parse URL from string as well as construct URL from parts.
 //!
 //! See [URL on Wikipedia](https://en.wikipedia.org/wiki/URL) and [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986) for more information.
 //!
