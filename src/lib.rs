@@ -35,6 +35,44 @@ impl UrlComponents {
     }
 }
 
+
+/// Convert given string into a UrlComponents struct
+///
+/// # Examples
+///
+/// ```
+/// use std::collections::HashMap;
+/// use url_build_parse::{build_url, parse_url, UrlAuthority, UrlComponents, UrlUserInfo};
+///
+/// let authority = UrlAuthority {
+///     user_info: Option::from(
+///                     UrlUserInfo
+///                         {
+///                             username: "usr".to_string(),
+///                             password: Option::from("pwd".to_string())
+///                         }),
+///     host: "somehost".to_string(),
+///     port: Option::from(80)
+/// };
+///
+/// let mut q = HashMap::new();
+/// q.insert("q".to_string(), "123".to_string());
+///
+///
+/// let url_components = UrlComponents {
+///     scheme: "https".to_string(),
+///     authority: Option::from(authority),
+///     path: "/".to_string(),
+///     query: Option::from(q),
+///     fragment: Option::from("fragment".to_string())
+/// };
+///
+/// let url = build_url(url_components.clone()).unwrap();
+/// assert_eq!("https://usr:pwd@somehost:80/?q=123#fragment", url.as_str());
+///
+/// let parsed_url_components = parse_url(url.as_str()).unwrap();
+/// assert_eq!(url_components, parsed_url_components);
+/// ```
 pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
     let mut url_components = UrlComponents::new();
 
@@ -137,6 +175,26 @@ pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
     Ok(url_components)
 }
 
+/// Convert given UrlComponents struct into URL string
+///
+/// # Examples
+///
+/// ```
+/// use url_build_parse::parse_url;
+/// let url = "https://usr:pwd@somehost:80/path?param=value&anotherParam#fragment";
+/// let url_components = parse_url(url).unwrap();
+///
+///
+/// assert_eq!(url_components.scheme, "https");
+/// assert_eq!(url_components.authority.as_ref().unwrap().user_info.as_ref().unwrap().username, "usr");
+/// assert_eq!(url_components.authority.as_ref().unwrap().user_info.as_ref().unwrap().password.as_ref().unwrap(), "pwd");
+/// assert_eq!(url_components.authority.as_ref().unwrap().host, "somehost");
+/// assert_eq!(*url_components.authority.as_ref().unwrap().port.as_ref().unwrap() as u8, 80 as u8);
+/// assert_eq!(url_components.path, "/path");
+/// assert_eq!(url_components.query.as_ref().unwrap().get("param").unwrap(), "value");
+/// assert!(url_components.query.as_ref().unwrap().contains_key("anotherParam"));
+/// assert_eq!("", url_components.query.as_ref().unwrap().get("anotherParam").unwrap());
+/// ```
 pub fn build_url(url_components: UrlComponents) -> Result<String, String> {
     let mut url = "".to_string();
 
