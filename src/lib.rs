@@ -1089,6 +1089,21 @@ mod tests {
     }
 
     #[test]
+    fn build_url_only_required_specified() {
+        let url_components = UrlComponents{
+            scheme: "https".to_string(),
+            authority: None,
+            path: "/".to_string(),
+            query: None,
+            fragment: None
+        };
+
+        let url = build_url(url_components.clone()).unwrap();
+        let parsed_url_components = parse_url(url.as_str()).unwrap();
+        assert_eq!(url_components, parsed_url_components);
+    }
+
+    #[test]
     fn build_authority_host_usrname_passwd_port() {
         let authority = UrlAuthority{
             user_info: Option::from(UrlUserInfo { username: "usr".to_string(), password: Option::from("pwd".to_string()) }),
