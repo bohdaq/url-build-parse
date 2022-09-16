@@ -2,21 +2,22 @@ use std::collections::HashMap;
 use url_search_params;
 use url_search_params::parse_url_search_params;
 
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct UrlComponents {
     pub scheme: String,
-    pub authority: Option<Authority>,
+    pub authority: Option<UrlAuthority>,
     pub path: String,
     pub query: Option<HashMap<String, String>>,
     pub fragment: Option<String>
 }
-
-pub struct Authority {
-    pub user_info: Option<UserInfo>,
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub struct UrlAuthority {
+    pub user_info: Option<UrlUserInfo>,
     pub host: String,
     pub port: Option<usize>
 }
-
-pub struct UserInfo {
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub struct UrlUserInfo {
     pub username: String,
     pub password: Option<String>
 }
@@ -63,13 +64,13 @@ pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
         let (boxed_username, boxed_password, host, boxed_port) = boxed_authority.unwrap();
 
 
-        let mut authority = Authority {
+        let mut authority = UrlAuthority {
             user_info: None,
             host,
             port: None
         };
 
-        let mut user_info : Option<UserInfo> = None;
+        let mut user_info : Option<UrlUserInfo> = None;
 
         if boxed_username.is_some() {
             let username = boxed_username.unwrap();
@@ -78,7 +79,7 @@ pub fn parse_url(url: &str) -> Result<UrlComponents, String> {
                 if boxed_password.is_some() {
                     password = boxed_password;
                 }
-                user_info = Some(UserInfo { username: username.to_string(), password });
+                user_info = Some(UrlUserInfo { username: username.to_string(), password });
             }
 
             authority.user_info = user_info;
