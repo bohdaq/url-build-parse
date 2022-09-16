@@ -954,6 +954,21 @@ mod tests {
     }
 
     #[test]
+    fn parse_simple_url_no_authority_no_path_with_query_with_fragment() {
+        let url = "mailto:?to=&subject=mailto%20with%20examples&body=https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FMailto";
+
+        let url_components = parse_url(url).unwrap();
+
+        assert_eq!(url_components.scheme, "mailto");
+        assert!(url_components.authority.is_none());
+        assert_eq!(url_components.path, "");
+        assert_eq!(url_components.query.as_ref().unwrap().get("subject").unwrap(), "mailto%20with%20examples");
+        assert_eq!(url_components.query.as_ref().unwrap().get("to").unwrap(), "");
+        assert_eq!(url_components.query.as_ref().unwrap().get("body").unwrap(), "https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FMailto");
+
+    }
+
+    #[test]
     fn extract_port_test() {
         let boxed_port = extract_port(":80");
         assert!(boxed_port.is_ok());
