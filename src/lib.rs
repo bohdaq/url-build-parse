@@ -252,7 +252,11 @@ pub(crate) fn build_authority(url_authority: UrlAuthority) -> String {
 
     if authority.chars().count() != 0 {
         authority = [authority, "@".to_string(), url_authority.host].join("");
+    } else {
+        authority = [authority,  url_authority.host].join("");
     }
+
+
 
     if url_authority.port.is_some() {
         authority = [authority, ":".to_string(), url_authority.port.unwrap().to_string()].join("");
@@ -1192,6 +1196,27 @@ mod tests {
         let url_authority = build_authority(authority);
 
         assert_eq!(url_authority, "usr:pwd@somehost:80");
+    }
+
+    #[test]
+    fn simple_build_steam_api() {
+        let params_map = HashMap::new();
+
+        let url_builder = UrlComponents{
+            scheme: "https".to_string(),
+            authority: Some(UrlAuthority{
+                user_info: None,
+                host: "api.steampowered.com".to_string(),
+                port: None
+            }),
+            query: Some(params_map),
+            fragment: None,
+            path: "/path".to_string()
+        };
+
+        let url = build_url(url_builder).unwrap();
+
+        assert_eq!("https://api.steampowered.com/path?", url)
     }
 
     #[test]

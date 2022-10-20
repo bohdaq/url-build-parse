@@ -1,12 +1,12 @@
 [package]
 name = "url-build-parse"
-version = "1.0.0"
+version = "2.0.0"
 edition = "2021"
 homepage = "https://github.com/bohdaq/url-build-parse"
 repository = "https://github.com/bohdaq/url-build-parse"
 readme = "README.md"
 description = "url-build-parse provides the ability to parse URL from string as well as construct URL from parts."
-rust-version = "1.56"
+rust-version = "1.64"
 authors = ["Bohdan Tsap <bohdan.tsap@tutanota.com>"]
 keywords = ["URL", "query", "params"]
 categories = ["web-programming", "web-programming::http-client", "web-programming::http-server", "parsing", "network-programming"]
