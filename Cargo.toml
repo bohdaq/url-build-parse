@@ -1,12 +1,12 @@
 [package]
 name = "url-build-parse"
-version = "2.0.0"
+version = "8.0.0"
 edition = "2021"
 homepage = "https://github.com/bohdaq/url-build-parse"
 repository = "https://github.com/bohdaq/url-build-parse"
 readme = "README.md"
 description = "url-build-parse provides the ability to parse URL from string as well as construct URL from parts."
-rust-version = "1.64"
+rust-version = "1.65"
 authors = ["Bohdan Tsap <bohdan.tsap@tutanota.com>"]
 keywords = ["URL", "query", "params"]
 categories = ["web-programming", "web-programming::http-client", "web-programming::http-server", "parsing", "network-programming"]
@@ -16,4 +16,4 @@ license = "MIT OR Apache-2.0 OR ISC OR LGPL-3.0-or-later OR CC-BY-4.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-url-search-params = "2.0.0"
+url-search-params = "8.0.0"
