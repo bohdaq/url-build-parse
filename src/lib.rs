@@ -1082,9 +1082,9 @@ mod tests {
         assert_eq!(url_components.scheme, "mailto");
         assert!(url_components.authority.is_none());
         assert_eq!(url_components.path, "");
-        assert_eq!(url_components.query.as_ref().unwrap().get("subject").unwrap(), "mailto%20with%20examples");
+        assert_eq!(url_components.query.as_ref().unwrap().get("subject").unwrap(), "mailto with examples");
         assert_eq!(url_components.query.as_ref().unwrap().get("to").unwrap(), "");
-        assert_eq!(url_components.query.as_ref().unwrap().get("body").unwrap(), "https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FMailto");
+        assert_eq!(url_components.query.as_ref().unwrap().get("body").unwrap(), "https://en.wikipedia.org/wiki/Mailto");
 
     }
 
